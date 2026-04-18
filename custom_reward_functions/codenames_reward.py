@@ -127,9 +127,9 @@ async def compute_score(data_source, solution_str, ground_truth,
             "parse_fail": parse_fail,
             "format_fail": 1,
             "judge_fail": 0,
-            "judge_guesses": [],
+            "judge_guesses": "",
             "clue": pc.clue,
-            "selected_targets": list(pc.selected_targets),
+            "selected_targets": ",".join(pc.selected_targets),
         }
 
     # -- 4. judge inference ------------------------------------------------
@@ -159,9 +159,9 @@ async def compute_score(data_source, solution_str, ground_truth,
             "parse_fail": parse_fail,
             "format_fail": 0,
             "judge_fail": 1,
-            "judge_guesses": [],
+            "judge_guesses": "",
             "clue": pc.clue,
-            "selected_targets": list(pc.selected_targets),
+            "selected_targets": ",".join(pc.selected_targets),
         }
 
     pg = parse_guesses(judge_text)
@@ -180,7 +180,7 @@ async def compute_score(data_source, solution_str, ground_truth,
         "parse_fail": parse_fail,
         "format_fail": 0,
         "judge_fail": 0,
-        "judge_guesses": list(pg.guesses),
+        "judge_guesses": ",".join(pg.guesses),
         "clue": pc.clue,
-        "selected_targets": list(pc.selected_targets),
+        "selected_targets": ",".join(pc.selected_targets),
     }
