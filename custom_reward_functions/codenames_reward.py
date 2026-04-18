@@ -116,6 +116,14 @@ async def compute_score(data_source, solution_str, ground_truth,
     format_ok = is_clue_format_ok(fmt)
     parse_fail = int(not pc.tags_present)
 
+    # Keys from guess_format_scores — must be present in every return path
+    # so VeRL's np.array(...) across the batch sees a homogeneous key set.
+    _empty_guess_diag = {
+        "guess_tags_present": 0.0,
+        "guess_nonempty": 0.0,
+        "guess_all_in_board": 0.0,
+    }
+
     # -- 3. short-circuit on clue-format failure --------------------------
     if not format_ok:
         task = zero_task_reward()
@@ -124,6 +132,7 @@ async def compute_score(data_source, solution_str, ground_truth,
             "score": score,
             **fmt,
             **task,
+            **_empty_guess_diag,
             "parse_fail": parse_fail,
             "format_fail": 1,
             "judge_fail": 0,
@@ -156,6 +165,7 @@ async def compute_score(data_source, solution_str, ground_truth,
             "score": score,
             **fmt,
             **task,
+            **_empty_guess_diag,
             "parse_fail": parse_fail,
             "format_fail": 0,
             "judge_fail": 1,
