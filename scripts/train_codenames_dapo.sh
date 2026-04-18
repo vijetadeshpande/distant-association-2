@@ -24,7 +24,8 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # 0. Paths and identities — edit for your environment
 # -----------------------------------------------------------------------------
-REPO_ROOT="${REPO_ROOT:-/home/public/vdeshpan/distant-association-2}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="${REPO_ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 cd "${REPO_ROOT}"
 
 TRAIN_PARQUET="${TRAIN_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/size_2/only_codenames_trial_train.parquet}"
