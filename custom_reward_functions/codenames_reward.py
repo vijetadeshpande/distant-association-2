@@ -37,15 +37,15 @@ import asyncio
 import logging
 from typing import Any
 
-from .format_reward import (
+from custom_reward_functions.format_reward import (
     clue_format_scores,
     guess_format_scores,
     is_clue_format_ok,
     thinking_format_scores,
 )
-from .judge_client import judge_guess, make_session, JUDGE_CONCURRENCY
-from .parsers import parse_clue, parse_guesses, parse_thinking
-from .task_reward import task_reward, zero_task_reward
+from custom_reward_functions.judge_client import judge_guess, make_session, JUDGE_CONCURRENCY
+from custom_reward_functions.parsers import parse_clue, parse_guesses, parse_thinking
+from custom_reward_functions.task_reward import task_reward, zero_task_reward
 
 logger = logging.getLogger(__name__)
 
