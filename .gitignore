@@ -1,3 +1,5 @@
+custom_data/
+
 **/*.pt
 **/checkpoints
 **/wget-log
