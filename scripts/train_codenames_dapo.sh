@@ -181,9 +181,9 @@ python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=${adv_estimator} \
     algorithm.use_kl_in_reward=${use_kl_in_reward} \
     algorithm.kl_ctrl.kl_coef=${kl_coef} \
-    algorithm.filter_groups.enable=${enable_filter_groups} \
-    algorithm.filter_groups.metric=${filter_groups_metric} \
-    algorithm.filter_groups.max_num_gen_batches=${max_num_gen_batches} \
+    +algorithm.filter_groups.enable=${enable_filter_groups} \
+    +algorithm.filter_groups.metric=${filter_groups_metric} \
+    +algorithm.filter_groups.max_num_gen_batches=${max_num_gen_batches} \
     data.train_files="${TRAIN_PARQUET}" \
     data.val_files="${VAL_PARQUET}" \
     data.train_batch_size=${train_prompt_bsz} \
@@ -194,9 +194,11 @@ python3 -m verl.trainer.main_ppo \
     reward.reward_manager.name=dapo \
     reward.custom_reward_function.path="${REWARD_FN_PATH}" \
     reward.custom_reward_function.name=compute_score \
-    reward.overlong_buffer.enable=${enable_overlong_buffer} \
-    reward.overlong_buffer.len=${overlong_buffer_len} \
-    reward.overlong_buffer.penalty_factor=${overlong_penalty_factor} \
+    +reward.reward_kwargs.overlong_buffer_cfg.enable=${enable_overlong_buffer} \
+    +reward.reward_kwargs.overlong_buffer_cfg.len=${overlong_buffer_len} \
+    +reward.reward_kwargs.overlong_buffer_cfg.penalty_factor=${overlong_penalty_factor} \
+    +reward.reward_kwargs.overlong_buffer_cfg.log=False \
+    +reward.reward_kwargs.max_resp_len=${max_response_length} \
     actor_rollout_ref.model.path="${TRAINEE_MODEL_PATH}" \
     actor_rollout_ref.model.use_remove_padding=True \
     actor_rollout_ref.model.use_fused_kernels=True \
