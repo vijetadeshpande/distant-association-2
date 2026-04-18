@@ -75,9 +75,9 @@ launch_judge() {
       --tensor-parallel-size "${JUDGE_TP}" \
       --dtype bfloat16 \
       --max-model-len 16384 \
-      --gpu-memory-utilization 0.90 \
+      --gpu-memory-utilization 0.80 \
       --enable-chunked-prefill \
-      --max-num-seqs 256 \
+      --max-num-seqs 32 \
       --served-model-name "${JUDGE_SERVED_NAME}" \
       --host "${JUDGE_HOST}" \
       --port "${JUDGE_PORT}" \
