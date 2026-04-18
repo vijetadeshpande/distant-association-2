@@ -37,6 +37,8 @@ import asyncio
 import logging
 from typing import Any
 
+import numpy as np
+
 from custom_reward_functions.format_reward import (
     clue_format_scores,
     guess_format_scores,
@@ -48,6 +50,47 @@ from custom_reward_functions.parsers import parse_clue, parse_guesses, parse_thi
 from custom_reward_functions.task_reward import task_reward, zero_task_reward
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Side-effect: wrap VeRL's `compute_data_metrics` so every numeric reward
+# sub-key lands in wandb as `reward/<key>/{mean,max,min}`.  Done here (not
+# in verl/) so the upstream repo stays untouched.  VeRL imports
+# `compute_data_metrics` into `ray_trainer.py`'s namespace, so we patch
+# that binding — patching `metric_utils` alone would not reach the call
+# site.  Import is inside a try so unit tests that stub out verl don't
+# fail on this.
+def _install_reward_metrics_hook() -> None:
+    try:
+        import verl.trainer.ppo.ray_trainer as _rt
+    except Exception:  # pragma: no cover
+        return
+    if getattr(_rt, "_codenames_metrics_hooked", False):
+        return
+    _orig = _rt.compute_data_metrics
+
+    def _wrapped(batch, use_critic=True):
+        metrics = _orig(batch, use_critic=use_critic)
+        nt = getattr(batch, "non_tensor_batch", None) or {}
+        for k, v in nt.items():
+            if k.startswith("__"):
+                continue
+            try:
+                arr = np.asarray(v, dtype=np.float32)
+            except (TypeError, ValueError):
+                continue
+            if arr.size == 0 or arr.ndim != 1:
+                continue
+            metrics[f"reward/{k}/mean"] = float(np.mean(arr))
+            metrics[f"reward/{k}/max"] = float(np.max(arr))
+            metrics[f"reward/{k}/min"] = float(np.min(arr))
+        return metrics
+
+    _rt.compute_data_metrics = _wrapped
+    _rt._codenames_metrics_hooked = True
+
+
+_install_reward_metrics_hook()
 
 # Module-level semaphore shared across all concurrent compute_score
 # coroutines running under the same event loop.  The reward-loop
