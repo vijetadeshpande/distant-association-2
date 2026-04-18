@@ -32,10 +32,10 @@ TRAIN_PARQUET="${TRAIN_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/versio
 VAL_PARQUET="${VAL_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-4/codenames_rlvr_clue_gen_val.parquet}"
 REWARD_FN_PATH="${REPO_ROOT}/custom_reward_functions/codenames_reward.py"
 
-TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-0.6B}"
+TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-8B}"
 TRAINEE_MODEL_PATH="${TRAINEE_MODEL_PATH:-${TRAINEE_MODEL_ID}}"
 
-JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-Qwen/Qwen3-4B}"
+JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-Qwen/Qwen3-14B}"
 JUDGE_PORT="${JUDGE_PORT:-8000}"
 JUDGE_HOST="${JUDGE_HOST:-127.0.0.1}"
 JUDGE_SERVED_NAME="${JUDGE_SERVED_NAME:-qwen3-judge}"
