@@ -187,7 +187,7 @@ python3 -m verl.trainer.main_ppo \
     data.train_files="${TRAIN_PARQUET}" \
     data.val_files="${VAL_PARQUET}" \
     data.train_batch_size=${train_prompt_bsz} \
-    data.gen_batch_size=${gen_prompt_bsz} \
+    +data.gen_batch_size=${gen_prompt_bsz} \
     data.max_prompt_length=${max_prompt_length} \
     data.max_response_length=${max_response_length} \
     reward_model.enable=False \
