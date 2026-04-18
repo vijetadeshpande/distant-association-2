@@ -35,7 +35,7 @@ REWARD_FN_PATH="${REPO_ROOT}/custom_reward_functions/codenames_reward.py"
 TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-0.6B}"
 TRAINEE_MODEL_PATH="${TRAINEE_MODEL_PATH:-${HOME}/models/${TRAINEE_MODEL_ID}}"
 
-JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-Qwen/Qwen3-14B}"
+JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-Qwen/Qwen3-4B}"
 JUDGE_PORT="${JUDGE_PORT:-8000}"
 JUDGE_HOST="${JUDGE_HOST:-127.0.0.1}"
 JUDGE_SERVED_NAME="${JUDGE_SERVED_NAME:-qwen3-judge}"
@@ -70,13 +70,13 @@ launch_judge() {
   echo "[judge] starting vLLM server for ${JUDGE_MODEL_ID} on GPUs ${JUDGE_GPU_IDS}"
   CUDA_VISIBLE_DEVICES="${JUDGE_GPU_IDS}" \
   nohup vllm serve "${JUDGE_MODEL_ID}" \
-      --quantization awq_marlin \
+      --quantization bitsandbytes \
+      --load-format bitsandbytes \
       --tensor-parallel-size "${JUDGE_TP}" \
-      --dtype float16 \
+      --dtype bfloat16 \
       --max-model-len 16384 \
       --gpu-memory-utilization 0.90 \
       --enable-chunked-prefill \
-      --enable-expert-parallel \
       --max-num-seqs 256 \
       --served-model-name "${JUDGE_SERVED_NAME}" \
       --host "${JUDGE_HOST}" \
