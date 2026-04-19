@@ -8,12 +8,18 @@
 #   - judge   = Qwen/Qwen3-14B (bitsandbytes 4-bit, frozen)
 #
 # Memory budget (per 16 GB A4000):
-#   Qwen3-8B bf16 weights  = 16 GB; Adam fp32 states = 32 GB; grads = 16 GB.
+#   Qwen3-8B bf16 weights  = 16.4 GB; Adam fp32 states = 32 GB; grads = 16 GB.
 #   Sharded over 6 GPUs that is ~10.7 GB/GPU — already over budget once you
-#   add activations and vLLM KV-cache on the same cards. So we MUST:
-#     - FSDP param_offload=True, optimizer_offload=True, ref offload=True
-#     - rollout tensor_model_parallel_size=2 (divides the 8B weights in half
-#       per GPU during generation)
+#   add activations and vLLM KV-cache on the same cards.  Crucially, the 16.4
+#   GB bf16 footprint is *already* larger than the 15.6 GB usable on one A4000,
+#   which means FSDP v1 OOMs at init: its broadcast requires rank 0 to
+#   materialize the full model on GPU before sharding.  So we MUST:
+#     - actor.strategy = fsdp2  (shards BEFORE broadcast via DTensor; rank 0
+#         only moves its ~2.7 GB shard to GPU — fits on A4000)
+#     - fsdp_config.offload_policy = True  (FSDP2 CPU-offload; replaces the
+#         post-init param_offload/optimizer_offload flags)
+#     - rollout tensor_model_parallel_size = 2 (halves the 8B weights per
+#         GPU during generation)
 #     - shrink rollout gpu_memory_utilization so FSDP + vLLM coexist
 #     - shrink prompt/response lengths and per-GPU micro-batch to 1
 #     - run the judge on its own 2 GPUs (TP=2) with a tighter max_model_len
@@ -164,10 +170,10 @@ train_traj_micro_bsz_per_gpu=1
 n_resp_per_prompt=4
 
 train_traj_micro_bsz=$((train_traj_micro_bsz_per_gpu * N_TRAIN_GPUS))   # 6
-train_traj_mini_bsz=$((train_traj_micro_bsz * 2))                       # 12
-train_prompt_mini_bsz=$((train_traj_mini_bsz * n_resp_per_prompt))      # 48
-train_prompt_bsz=$((train_prompt_mini_bsz * 2))                         # 96
-gen_prompt_bsz=$((train_prompt_bsz * 2))                                # 192
+train_traj_mini_bsz=${train_traj_micro_bsz}                             # 6  (1 micro/mini, no grad-accum)
+train_prompt_mini_bsz=$((train_traj_mini_bsz * n_resp_per_prompt))      # 24
+train_prompt_bsz=${train_prompt_mini_bsz}                               # 24 (1 mini per prompt-batch)
+gen_prompt_bsz=$((train_prompt_bsz * 2))                                # 48
 
 EXP_NAME="codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")-8xA4000"
 
@@ -175,18 +181,23 @@ EXP_NAME="codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")-8xA4000"
 # 4. Launch DAPO training.
 #
 # A4000-specific overrides vs. the H100 script:
-#   actor.fsdp_config.param_offload=True
-#   actor.fsdp_config.optimizer_offload=True
-#     -> pushes fp32 Adam states (~32 GB) and idle bf16 weights to host RAM.
-#        Without this, FSDP alone blows the 16 GB budget before rollout.
+#   actor.strategy=fsdp2 (+ ref via ${actor.strategy})
+#     -> FSDP v1 OOMs at init on 16 GB A4000 because rank 0 must put the
+#        full 8B bf16 model (16.4 GB) on GPU to broadcast.  FSDP2 shards
+#        via DTensor before broadcast, so rank 0 only ever holds its ~2.7
+#        GB shard on GPU.  This is THE fix for the init OOM.
+#   actor.fsdp_config.offload_policy=True
+#     -> FSDP2's native CPUOffloadPolicy. Replaces the v1 param_offload /
+#        optimizer_offload flags (they get auto-disabled when FSDP2 owns
+#        offload — see fsdp_workers.py:620-623).
 #   rollout.gpu_memory_utilization=0.55
 #     -> leaves headroom for FSDP shards + activations to coexist with the
 #        vLLM HybridEngine on the same cards. 0.80 (the H100 value) OOMs.
 #   rollout.max_num_batched_tokens / max_num_seqs -> small, to keep the KV
 #     cache inside the remaining budget.
-#   actor.ulysses_sequence_parallel_size=2 (via hydra override) is NOT used
-#     here; with max_response_length=2048 and micro_bsz=1, plain FSDP +
-#     gradient checkpointing is sufficient.
+#   Batch sizes: halved from the first A4000 draft after the init-OOM fix,
+#     to give post-init rollout + backward activations extra headroom
+#     (your priority #1: batch size).
 # -----------------------------------------------------------------------------
 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=${adv_estimator} \
@@ -222,6 +233,8 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.loss_agg_mode=${loss_agg_mode} \
     actor_rollout_ref.actor.ppo_mini_batch_size=${train_prompt_mini_bsz} \
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=${train_traj_micro_bsz_per_gpu} \
+    actor_rollout_ref.actor.strategy=fsdp2 \
+    actor_rollout_ref.actor.fsdp_config.offload_policy=True \
     actor_rollout_ref.actor.fsdp_config.param_offload=True \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=True \
     actor_rollout_ref.rollout.name=vllm \
@@ -234,6 +247,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.free_cache_engine=True \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=${train_traj_micro_bsz_per_gpu} \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=${train_traj_micro_bsz_per_gpu} \
+    actor_rollout_ref.ref.fsdp_config.offload_policy=True \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     trainer.project_name='Distant-Association' \
     trainer.experiment_name="${EXP_NAME}" \
