@@ -201,6 +201,11 @@ EXP_NAME="codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")-8xA4000"
 #        cache (0.3 GiB left after weights).
 #   rollout.max_num_batched_tokens / max_num_seqs -> small, to keep the KV
 #     cache inside the remaining budget.
+#   rollout.update_weights_bucket_megabytes=3072
+#     -> Qwen3-8B's embed_tokens (151936 x 4096, materialized as fp32 during
+#        the FSDP->vLLM weight sync) is ~2.38 GB — larger than the default
+#        2048 MB bucket. 3072 MB gives headroom for the single biggest
+#        tensor plus small ones packed alongside.
 #   Batch sizes: halved from the first A4000 draft after the init-OOM fix,
 #     to give post-init rollout + backward activations extra headroom
 #     (your priority #1: batch size).
@@ -250,6 +255,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.max_model_len=$((max_prompt_length + max_response_length)) \
     actor_rollout_ref.rollout.max_num_seqs=16 \
     actor_rollout_ref.rollout.max_num_batched_tokens=4096 \
+    actor_rollout_ref.rollout.update_weights_bucket_megabytes=3072 \
     actor_rollout_ref.rollout.enforce_eager=False \
     actor_rollout_ref.rollout.free_cache_engine=True \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=${train_traj_micro_bsz_per_gpu} \
