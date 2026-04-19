@@ -190,9 +190,15 @@ EXP_NAME="codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")-8xA4000"
 #     -> FSDP2's native CPUOffloadPolicy. Replaces the v1 param_offload /
 #        optimizer_offload flags (they get auto-disabled when FSDP2 owns
 #        offload — see fsdp_workers.py:620-623).
-#   rollout.gpu_memory_utilization=0.55
-#     -> leaves headroom for FSDP shards + activations to coexist with the
-#        vLLM HybridEngine on the same cards. 0.80 (the H100 value) OOMs.
+#   rollout.max_model_len = prompt+response (4096)
+#     -> vLLM defaults to the HF config window (40960 for Qwen3-8B) and
+#        tries to reserve KV for that, which blows the 16 GB budget.
+#        Capping at 4096 is sufficient since we never exceed
+#        max_prompt_length + max_response_length anyway.
+#   rollout.gpu_memory_utilization=0.70
+#     -> with fsdp2 offload_policy the actor's params live on CPU during
+#        rollout, so vLLM can claim most of the GPU.  0.55 starved the KV
+#        cache (0.3 GiB left after weights).
 #   rollout.max_num_batched_tokens / max_num_seqs -> small, to keep the KV
 #     cache inside the remaining budget.
 #   Batch sizes: halved from the first A4000 draft after the init-OOM fix,
@@ -240,7 +246,8 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.name=vllm \
     actor_rollout_ref.rollout.n=${n_resp_per_prompt} \
     actor_rollout_ref.rollout.tensor_model_parallel_size=${ROLLOUT_TP} \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.55 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.70 \
+    actor_rollout_ref.rollout.max_model_len=$((max_prompt_length + max_response_length)) \
     actor_rollout_ref.rollout.max_num_seqs=16 \
     actor_rollout_ref.rollout.max_num_batched_tokens=4096 \
     actor_rollout_ref.rollout.enforce_eager=False \
