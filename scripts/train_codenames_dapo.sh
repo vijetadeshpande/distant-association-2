@@ -133,6 +133,15 @@ export JUDGE_TEMPERATURE="${JUDGE_TEMPERATURE:-0.0}"
 # Make `custom_reward_functions` importable when VeRL loads the reward file.
 export PYTHONPATH="${REPO_ROOT}:${PYTHONPATH:-}"
 
+# NCCL 2.27+ defaults NCCL_CUMEM_ENABLE=1, which routes buffer allocation through
+# the CUDA VMM driver API (cuMemCreate). On vast.ai containers running driver
+# 590.48.01 / RTX 5090, the host-side path (ncclCuMemHostEnable) segfaults inside
+# cuMemCreate during the first FSDP broadcast, killing one rank at init. Force
+# the classic cudaMalloc path instead.
+export NCCL_CUMEM_HOST_ENABLE=0
+export NCCL_CUMEM_ENABLE=0
+export NCCL_DEBUG="${NCCL_DEBUG:-WARN}"
+
 # -----------------------------------------------------------------------------
 # 3. DAPO hyperparameters (mirrors tests/special_e2e/run_dapo.sh)
 # -----------------------------------------------------------------------------
