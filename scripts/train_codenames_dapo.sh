@@ -190,7 +190,7 @@ save_freq=$(( total_train_steps / 4 ))
 [ "${save_freq}" -lt 1 ] && save_freq=1
 echo "[ckpt] dataset_rows=${dataset_rows} total_train_steps=${total_train_steps} save_freq=${save_freq}"
 
-EXP_NAME="codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")"
+EXP_NAME="codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")-$(date +%Y%m%d-%H%M%S)"
 
 # -----------------------------------------------------------------------------
 # 4. Launch DAPO training.
@@ -244,7 +244,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=${train_traj_micro_bsz_per_gpu} \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     trainer.project_name='Distant-Association' \
-    trainer.experiment_name=null \
+    trainer.experiment_name=${EXP_NAME} \
     trainer.logger='[console,wandb]' \
     trainer.n_gpus_per_node=${N_TRAIN_GPUS} \
     trainer.nnodes=1 \
