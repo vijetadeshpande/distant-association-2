@@ -37,8 +37,6 @@ import asyncio
 import logging
 from typing import Any
 
-import numpy as np
-
 from custom_reward_functions.format_reward import (
     clue_format_scores,
     guess_format_scores,
@@ -53,69 +51,14 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Side-effect: wrap VeRL's `compute_data_metrics` so every numeric reward
-# sub-key lands in wandb as `reward/<key>/{mean,max,min}`.  Done here (not
-# in verl/) so the upstream repo stays untouched.  VeRL imports
-# `compute_data_metrics` into `ray_trainer.py`'s namespace, so we patch
-# that binding — patching `metric_utils` alone would not reach the call
-# site.  Import is inside a try so unit tests that stub out verl don't
-# fail on this.
-def _install_reward_metrics_hook() -> None:
-    try:
-        import verl.trainer.ppo.ray_trainer as _rt
-    except Exception:  # pragma: no cover
-        return
-    if getattr(_rt, "_codenames_metrics_hooked", False):
-        return
-    _orig = _rt.compute_data_metrics
-
-    def _wrapped(batch, use_critic=True):
-        metrics = _orig(batch, use_critic=use_critic)
-        nt = getattr(batch, "non_tensor_batch", None) or {}
-        batch_size = 0
-        score_arr = None
-        for k, v in nt.items():
-            if k.startswith("__"):
-                continue
-            try:
-                arr = np.asarray(v, dtype=np.float32)
-            except (TypeError, ValueError):
-                continue
-            if arr.size == 0 or arr.ndim != 1:
-                continue
-            metrics[f"reward/{k}/mean"] = float(np.mean(arr))
-            metrics[f"reward/{k}/max"] = float(np.max(arr))
-            metrics[f"reward/{k}/min"] = float(np.min(arr))
-            batch_size = max(batch_size, arr.size)
-            if k == "score":
-                score_arr = arr
-
-        # Per-sample text fields as a wandb.Table (N sample rows per step).
-        text_keys = [k for k in ("clue", "selected_targets", "judge_guesses") if k in nt]
-        if text_keys and batch_size:
-            try:
-                import wandb  # type: ignore
-            except ImportError:
-                wandb = None  # type: ignore
-            if wandb is not None:
-                cols = ["sample_idx", *text_keys]
-                if score_arr is not None:
-                    cols.append("score")
-                tbl = wandb.Table(columns=cols)
-                n_rows = min(8, batch_size)
-                for i in range(n_rows):
-                    row = [i] + [str(nt[k][i]) for k in text_keys]
-                    if score_arr is not None:
-                        row.append(float(score_arr[i]))
-                    tbl.add_data(*row)
-                metrics["reward/samples"] = tbl
-        return metrics
-
-    _rt.compute_data_metrics = _wrapped
-    _rt._codenames_metrics_hooked = True
-
-
-_install_reward_metrics_hook()
+# Reward sub-metrics (every float key below) land in wandb as
+# `reward/<key>/{mean,max,min}` via a small block added to
+# `verl/trainer/ppo/metric_utils.py:compute_data_metrics`. Text fields
+# (clue, selected_targets, judge_guesses) are logged as a per-step
+# `reward/samples` wandb.Table. That patch has to live in VeRL because
+# compute_data_metrics runs on the TaskRunner Ray actor, which does not
+# import this reward file (only the RewardLoopWorker Ray actors do).
+# ---------------------------------------------------------------------------
 
 # Module-level semaphore shared across all concurrent compute_score
 # coroutines running under the same event loop.  The reward-loop

@@ -178,11 +178,14 @@ gen_prompt_bsz=$((train_prompt_bsz * 4))
 
 total_epochs=8
 
-# Save ~4 checkpoints per run (every 25%). Upper-bound estimate of steps:
-# dataset_size * epochs / train_prompt_bsz. DAPO's filter_groups may reduce
-# actual step count, which only makes us save more often — fine.
+# Save ~4 checkpoints per run (every 25%). DAPO with filter_groups consumes
+# `gen_prompt_bsz` from the dataloader per step (not `train_prompt_bsz`) —
+# it over-samples, rolls out, filters low-variance groups, then trains on
+# a `train_prompt_bsz` subset. If filter_groups resamples (up to
+# max_num_gen_batches), actual step count is LOWER than this estimate,
+# which only makes save_freq fire more often — fine.
 dataset_rows=$(python3 -c "import pyarrow.parquet as pq; print(pq.read_metadata('${TRAIN_PARQUET}').num_rows)")
-total_train_steps=$(( (dataset_rows * total_epochs + train_prompt_bsz - 1) / train_prompt_bsz ))
+total_train_steps=$(( (dataset_rows * total_epochs + gen_prompt_bsz - 1) / gen_prompt_bsz ))
 save_freq=$(( total_train_steps / 4 ))
 [ "${save_freq}" -lt 1 ] && save_freq=1
 echo "[ckpt] dataset_rows=${dataset_rows} total_train_steps=${total_train_steps} save_freq=${save_freq}"

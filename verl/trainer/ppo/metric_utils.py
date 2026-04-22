@@ -222,6 +222,59 @@ def compute_data_metrics(batch: DataProto, use_critic: bool = True) -> dict[str,
         metrics["tool_call_counts/max"] = tool_call_counts.max()
         metrics["tool_call_counts/mean"] = tool_call_counts.mean()
 
+    # Custom reward sub-metrics: any 1-D numeric array in non_tensor_batch
+    # becomes `reward/<key>/{mean,max,min}`. This lets custom compute_score
+    # functions return a dict of sub-rewards and have every numeric key
+    # land in wandb automatically, with no per-project manual wiring.
+    _nt = getattr(batch, "non_tensor_batch", None) or {}
+    _text_values: dict[str, Any] = {}
+    for _k, _v in _nt.items():
+        if _k.startswith("__"):
+            continue
+        try:
+            _arr = np.asarray(_v, dtype=np.float32)
+        except (TypeError, ValueError):
+            # Likely a string-valued array; keep for wandb.Table below.
+            try:
+                _sv = np.asarray(_v)
+                if _sv.ndim == 1 and _sv.dtype.kind in ("U", "O"):
+                    _text_values[_k] = _sv
+            except (TypeError, ValueError):
+                pass
+            continue
+        if _arr.size == 0 or _arr.ndim != 1:
+            continue
+        metrics[f"reward/{_k}/mean"] = float(np.mean(_arr))
+        metrics[f"reward/{_k}/max"] = float(np.max(_arr))
+        metrics[f"reward/{_k}/min"] = float(np.min(_arr))
+
+    # Per-sample text fields as a wandb.Table (N sample rows per step).
+    _text_keys = [k for k in ("clue", "selected_targets", "judge_guesses") if k in _text_values]
+    if _text_keys:
+        try:
+            import wandb  # type: ignore
+        except ImportError:
+            wandb = None  # type: ignore
+        if wandb is not None:
+            _score = _nt.get("score")
+            _score_arr = None
+            if _score is not None:
+                try:
+                    _score_arr = np.asarray(_score, dtype=np.float32)
+                except (TypeError, ValueError):
+                    _score_arr = None
+            _cols = ["sample_idx", *_text_keys]
+            if _score_arr is not None:
+                _cols.append("score")
+            _tbl = wandb.Table(columns=_cols)
+            _n_rows = min(8, len(_text_values[_text_keys[0]]))
+            for _i in range(_n_rows):
+                _row = [_i] + [str(_text_values[k][_i]) for k in _text_keys]
+                if _score_arr is not None:
+                    _row.append(float(_score_arr[_i]))
+                _tbl.add_data(*_row)
+            metrics["reward/samples"] = _tbl
+
     return metrics
 
 
