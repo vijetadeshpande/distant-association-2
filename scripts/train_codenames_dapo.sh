@@ -32,7 +32,7 @@ TRAIN_PARQUET="${TRAIN_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/versio
 VAL_PARQUET="${VAL_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-4/codenames_rlvr_clue_gen_val.parquet}"
 REWARD_FN_PATH="${REPO_ROOT}/custom_reward_functions/codenames_reward.py"
 
-TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-8B}"
+TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-4B}"
 TRAINEE_MODEL_PATH="${TRAINEE_MODEL_PATH:-${TRAINEE_MODEL_ID}}"
 
 JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-Qwen/Qwen3-14B}"
@@ -156,9 +156,9 @@ clip_ratio_low=0.2
 clip_ratio_high=0.28
 
 max_prompt_length=2048
-max_response_length=4096
+max_response_length=16384
 enable_overlong_buffer=True
-overlong_buffer_len=128
+overlong_buffer_len=4096
 overlong_penalty_factor=1.0
 
 loss_agg_mode="token-mean"
@@ -175,6 +175,17 @@ train_traj_mini_bsz=$((train_traj_micro_bsz * 2))
 train_prompt_mini_bsz=$((train_traj_mini_bsz * n_resp_per_prompt))
 train_prompt_bsz=$((train_prompt_mini_bsz * 2))
 gen_prompt_bsz=$((train_prompt_bsz * 4))
+
+total_epochs=2
+
+# Save ~4 checkpoints per run (every 25%). Upper-bound estimate of steps:
+# dataset_size * epochs / train_prompt_bsz. DAPO's filter_groups may reduce
+# actual step count, which only makes us save more often — fine.
+dataset_rows=$(python3 -c "import pyarrow.parquet as pq; print(pq.read_metadata('${TRAIN_PARQUET}').num_rows)")
+total_train_steps=$(( (dataset_rows * total_epochs + train_prompt_bsz - 1) / train_prompt_bsz ))
+save_freq=$(( total_train_steps / 4 ))
+[ "${save_freq}" -lt 1 ] && save_freq=1
+echo "[ckpt] dataset_rows=${dataset_rows} total_train_steps=${total_train_steps} save_freq=${save_freq}"
 
 EXP_NAME="codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")"
 
@@ -224,7 +235,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.name=vllm \
     actor_rollout_ref.rollout.n=${n_resp_per_prompt} \
     actor_rollout_ref.rollout.tensor_model_parallel_size=${ROLLOUT_TP} \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.7 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.85 \
     actor_rollout_ref.rollout.checkpoint_engine.update_weights_bucket_megabytes=3072 \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=${train_traj_micro_bsz_per_gpu} \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=${train_traj_micro_bsz_per_gpu} \
@@ -234,8 +245,8 @@ python3 -m verl.trainer.main_ppo \
     trainer.logger='[console,wandb]' \
     trainer.n_gpus_per_node=${N_TRAIN_GPUS} \
     trainer.nnodes=1 \
-    trainer.save_freq=-1 \
-    trainer.total_epochs=2 \
+    trainer.save_freq=${save_freq} \
+    trainer.total_epochs=${total_epochs} \
     trainer.resume_mode=disable \
     trainer.val_before_train=False \
     "$@"
