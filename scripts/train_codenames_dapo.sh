@@ -176,7 +176,7 @@ train_prompt_mini_bsz=$((train_traj_mini_bsz * n_resp_per_prompt))
 train_prompt_bsz=$((train_prompt_mini_bsz * 2))
 gen_prompt_bsz=$((train_prompt_bsz * 4))
 
-total_epochs=8
+total_epochs=16
 
 # Save ~4 checkpoints per run (every 25%). DAPO with filter_groups consumes
 # `gen_prompt_bsz` from the dataloader per step (not `train_prompt_bsz`) —
