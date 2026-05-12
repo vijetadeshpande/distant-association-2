@@ -16,6 +16,7 @@ def _extra_info():
 
 
 def test_short_circuits_on_bad_clue_format(monkeypatch):
+    monkeypatch.setenv("JUDGE_NAME", "qwen3-judge")
     called = {"n": 0}
 
     async def _fail_judge(*a, **kw):
@@ -34,6 +35,7 @@ def test_short_circuits_on_bad_clue_format(monkeypatch):
 
 
 def test_morph_short_circuits_judge(monkeypatch):
+    monkeypatch.setenv("JUDGE_NAME", "qwen3-judge")
     called = {"n": 0}
 
     async def _fail_judge(*a, **kw):
@@ -52,6 +54,8 @@ def test_morph_short_circuits_judge(monkeypatch):
 
 
 def test_happy_path_with_mocked_judge(monkeypatch):
+    monkeypatch.setenv("JUDGE_NAME", "qwen3-judge")
+
     async def _ok_judge(*a, **kw):
         return F.JUDGE_OUTPUT_CLEAN
 
@@ -71,6 +75,8 @@ def test_happy_path_with_mocked_judge(monkeypatch):
 
 
 def test_judge_failure_returns_zero_task(monkeypatch):
+    monkeypatch.setenv("JUDGE_NAME", "qwen3-judge")
+
     async def _ret_none(*a, **kw):
         return None
 

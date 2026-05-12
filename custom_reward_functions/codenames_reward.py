@@ -7,29 +7,31 @@ experimental reward-loop in VeRL 0.7.1
 across the rollout batch via ``asyncio.gather`` — that gives us
 Phase-2 throughput without writing a custom RewardManager.
 
-Pipeline per sample
--------------------
-1. Parse the trainee rollout:
-     - CoT sections (thinking / reasoning / reflection / adjustment /
-       output)
-     - ``[CODENAMES-CLUE-START] ... END]`` block → clue + Selected-Targets
-2. Score the format (0 on pass, negative on violation).
-3. If any clue-format check failed, **short-circuit** — skip the judge
-   call, return zero task reward alongside the format penalties.
-4. Otherwise, call the external vLLM judge with the Guess-Generator
-   prompt, parse the ``[Guesses]`` list, and compute the three task
-   sub-rewards.
-5. Return a dict with:
-     - ``score``: arithmetic mean of every sub-reward (format terms +
-       task sub-terms).  This is the scalar VeRL writes into
-       ``reward_tensor``.
-     - Every sub-reward key (for logging via ``reward_extra_info``).
-     - ``parse_fail``, ``format_fail``, ``judge_fail`` diagnostics.
+Two trainee tasks share this entry point
+----------------------------------------
+* **Clue task** (``extra_info["task"]`` contains ``"clue"``): trainee is
+  the Spymaster; format check on the clue block + task reward via
+  external judge OR GloVe-cosine. See ``judge_client.py`` and
+  ``cosine_reward.py``.
+* **Guess task** (``extra_info["task"]`` contains ``"guess"``): trainee
+  is the Operative; format check on the guess block + rule-based task
+  reward computed directly on the parsed guesses (no judge needed).
 
-Environment variables
----------------------
-See ``judge_client.py`` for the judge HTTP config.  No env vars are
-read here directly.
+The top-level ``compute_score`` is a small dispatcher that routes on
+``extra_info["task"]`` and delegates to ``_compute_score_clue`` or
+``_compute_score_guess``.  Both helpers emit the *same* return-dict
+key set so VeRL's per-step ``np.array(...)`` across the batch stays
+homogeneous regardless of the per-row task.
+
+Sub-rewards exposed to wandb
+----------------------------
+Every float key below lands in wandb as ``reward/<key>/{mean,max,min}``
+via a small block added to ``verl/trainer/ppo/metric_utils.py``. Text
+fields (``clue``, ``selected_targets``, ``judge_guesses``) are logged
+as a per-step ``reward/samples`` wandb.Table. That patch lives in VeRL
+because compute_data_metrics runs on the TaskRunner Ray actor, which
+does not import this reward file (only the RewardLoopWorker Ray actors
+do).
 """
 from __future__ import annotations
 
@@ -37,10 +39,16 @@ import asyncio
 import logging
 from typing import Any
 
+from custom_reward_functions.cosine_reward import (
+    cosine_reward,
+    is_cosine_mode,
+    zero_cosine_reward,
+)
 from custom_reward_functions.format_reward import (
     clue_format_scores,
     guess_format_scores,
     is_clue_format_ok,
+    is_guess_format_ok,
     thinking_format_scores,
 )
 from custom_reward_functions.judge_client import judge_guess, make_session, JUDGE_CONCURRENCY
@@ -49,16 +57,6 @@ from custom_reward_functions.task_reward import task_reward, zero_task_reward
 
 logger = logging.getLogger(__name__)
 
-
-# ---------------------------------------------------------------------------
-# Reward sub-metrics (every float key below) land in wandb as
-# `reward/<key>/{mean,max,min}` via a small block added to
-# `verl/trainer/ppo/metric_utils.py:compute_data_metrics`. Text fields
-# (clue, selected_targets, judge_guesses) are logged as a per-step
-# `reward/samples` wandb.Table. That patch has to live in VeRL because
-# compute_data_metrics runs on the TaskRunner Ray actor, which does not
-# import this reward file (only the RewardLoopWorker Ray actors do).
-# ---------------------------------------------------------------------------
 
 # Module-level semaphore shared across all concurrent compute_score
 # coroutines running under the same event loop.  The reward-loop
@@ -83,10 +81,33 @@ def _as_list(value: Any) -> list:
     return list(value)
 
 
+# Union of every format key produced by either task path. The return
+# dict must contain all of these so VeRL sees a homogeneous schema.
+_ALL_FORMAT_KEYS: tuple[str, ...] = (
+    "thinking_all_present",
+    "thinking_in_order",
+    "clue_tags_present",
+    "clue_single_word",
+    "clue_no_hyphen",
+    "clue_selected_nonempty",
+    "clue_selected_subset",
+    "clue_no_morph_variant",
+    "guess_tags_present",
+    "guess_nonempty",
+    "guess_all_in_board",
+    "guess_count_ok",
+)
+
+
 def _aggregate(fmt_scores: dict, task_scores: dict) -> float:
     """Arithmetic mean over every format sub-reward and every task
     sub-reward except the composite ``task`` key (kept separately for
-    logging)."""
+    logging).
+
+    Only keys actually present in ``fmt_scores`` are aggregated, so
+    a path that scored clue-format keys (e.g. the clue task) ignores
+    guess-format keys, and vice versa.
+    """
     terms: list[float] = []
     terms.extend(float(v) for v in fmt_scores.values())
     for k, v in task_scores.items():
@@ -102,18 +123,68 @@ def _aggregate(fmt_scores: dict, task_scores: dict) -> float:
     return sum(terms) / len(terms)
 
 
-async def compute_score(data_source, solution_str, ground_truth,
-                        extra_info=None, **kwargs) -> dict:
-    """VeRL-compatible async reward function.
+def _build_return(
+    *,
+    fmt: dict,
+    task: dict,
+    parse_fail: int,
+    format_fail: int,
+    judge_fail: int,
+    judge_guesses: str,
+    guess_diag: dict[str, Any] | None,
+    cosine_diag: dict[str, Any] | None,
+    clue: str,
+    selected_targets: list[str],
+) -> dict[str, Any]:
+    """Build a return dict whose key set is identical in every code path.
 
-    Returns a dict with ``score`` (scalar used for optimization) plus
-    every sub-reward and diagnostic.  All dict values are copied into
-    ``reward_extra_info`` by the reward manager, so they show up
-    per-step in the training metrics.
+    ``fmt`` carries only the format keys the per-task path actually
+    scored — the missing keys are padded with 0.0 (passing) here.
+    ``guess_diag`` is an OPTIONAL judge-side diagnostic dict used by
+    the clue task in judge mode; when present it overrides the
+    ``guess_*`` slots so they reflect the judge's output rather than
+    the trainee's.  In the guess task, ``guess_diag`` is None — the
+    ``guess_*`` slots already hold the trainee's format scores via
+    ``fmt``.
     """
-    extra_info = dict(extra_info or {})
+    padded_fmt = {k: 0.0 for k in _ALL_FORMAT_KEYS}
+    padded_fmt.update(fmt)
+    if guess_diag is not None:
+        padded_fmt.update(guess_diag)
+
+    cosine = cosine_diag if cosine_diag is not None else {"cosine_sim": 0.0, "oov": 0}
+
+    out: dict[str, Any] = {
+        "score": _aggregate(fmt, task),
+        **padded_fmt,
+        **task,
+        **cosine,
+        "parse_fail": int(parse_fail),
+        "format_fail": int(format_fail),
+        "judge_fail": int(judge_fail),
+        "judge_guesses": judge_guesses,
+        "clue": clue,
+        "selected_targets": ",".join(selected_targets),
+    }
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Clue task
+# ---------------------------------------------------------------------------
+
+async def _compute_score_clue(solution_str: str, extra_info: dict) -> dict:
+    """Spymaster scoring path.
+
+    Pipeline: parse rollout → score clue+thinking format → short-circuit
+    on format fail → step-4 task reward via judge HTTP (or GloVe-cosine
+    if ``JUDGE_NAME`` is unset).
+    """
     target_set = _as_list(extra_info.get("target_words", []))
     non_target_set = _as_list(extra_info.get("non_target_words", []))
+    target_clue = str(extra_info.get("clue", "") or "")
+
+    cosine_mode = is_cosine_mode()
 
     # -- 1. parse rollout --------------------------------------------------
     pt = parse_thinking(solution_str)
@@ -127,32 +198,50 @@ async def compute_score(data_source, solution_str, ground_truth,
     format_ok = is_clue_format_ok(fmt)
     parse_fail = int(not pc.tags_present)
 
-    # Keys from guess_format_scores — must be present in every return path
-    # so VeRL's np.array(...) across the batch sees a homogeneous key set.
-    _empty_guess_diag = {
-        "guess_tags_present": 0.0,
-        "guess_nonempty": 0.0,
-        "guess_all_in_board": 0.0,
-    }
-
     # -- 3. short-circuit on clue-format failure --------------------------
     if not format_ok:
-        task = zero_task_reward()
-        score = _aggregate(fmt, task)
-        return {
-            "score": score,
-            **fmt,
-            **task,
-            **_empty_guess_diag,
-            "parse_fail": parse_fail,
-            "format_fail": 1,
-            "judge_fail": 0,
-            "judge_guesses": "",
-            "clue": pc.clue,
-            "selected_targets": ",".join(pc.selected_targets),
-        }
+        if cosine_mode:
+            task = zero_cosine_reward()
+            cosine_diag = {"cosine_sim": task["cosine_sim"], "oov": task["oov"]}
+        else:
+            task = zero_task_reward()
+            cosine_diag = None
+        return _build_return(
+            fmt=fmt,
+            task={k: v for k, v in task.items() if k not in ("cosine_sim", "oov")},
+            parse_fail=parse_fail,
+            format_fail=1,
+            judge_fail=0,
+            judge_guesses="",
+            guess_diag=None,
+            cosine_diag=cosine_diag,
+            clue=pc.clue,
+            selected_targets=pc.selected_targets,
+        )
 
-    # -- 4. judge inference ------------------------------------------------
+    # -- 4. task reward ----------------------------------------------------
+    if cosine_mode:
+        if not target_clue:
+            logger.warning(
+                "Cosine mode: extra_info['clue'] is missing/empty for this sample; "
+                "returning cosine_sim=0."
+            )
+        task = cosine_reward(pc.clue, target_clue)
+        cosine_diag = {"cosine_sim": task["cosine_sim"], "oov": task["oov"]}
+        return _build_return(
+            fmt=fmt,
+            task={k: v for k, v in task.items() if k not in ("cosine_sim", "oov")},
+            parse_fail=parse_fail,
+            format_fail=0,
+            judge_fail=0,
+            judge_guesses="",
+            guess_diag=None,
+            cosine_diag=cosine_diag,
+            clue=pc.clue,
+            selected_targets=pc.selected_targets,
+        )
+
+    # -- 4 (judge mode). judge inference ----------------------------------
     all_words = list(target_set) + list(non_target_set)
     sem = _get_sem()
     judge_text: str | None = None
@@ -171,19 +260,18 @@ async def compute_score(data_source, solution_str, ground_truth,
 
     if not judge_text:
         task = zero_task_reward()
-        score = _aggregate(fmt, task)
-        return {
-            "score": score,
-            **fmt,
-            **task,
-            **_empty_guess_diag,
-            "parse_fail": parse_fail,
-            "format_fail": 0,
-            "judge_fail": 1,
-            "judge_guesses": "",
-            "clue": pc.clue,
-            "selected_targets": ",".join(pc.selected_targets),
-        }
+        return _build_return(
+            fmt=fmt,
+            task=task,
+            parse_fail=parse_fail,
+            format_fail=0,
+            judge_fail=1,
+            judge_guesses="",
+            guess_diag=None,
+            cosine_diag=None,
+            clue=pc.clue,
+            selected_targets=pc.selected_targets,
+        )
 
     pg = parse_guesses(judge_text)
     # Judge-side format is logged for diagnostics but does NOT feed into
@@ -191,17 +279,117 @@ async def compute_score(data_source, solution_str, ground_truth,
     guess_diag = guess_format_scores(pg, all_words)
 
     task = task_reward(pg.guesses, target_set, non_target_set)
-    score = _aggregate(fmt, task)
+    return _build_return(
+        fmt=fmt,
+        task=task,
+        parse_fail=parse_fail,
+        format_fail=0,
+        judge_fail=0,
+        judge_guesses=",".join(pg.guesses),
+        guess_diag=guess_diag,
+        cosine_diag=None,
+        clue=pc.clue,
+        selected_targets=pc.selected_targets,
+    )
 
-    return {
-        "score": score,
-        **fmt,
-        **task,
-        **guess_diag,
-        "parse_fail": parse_fail,
-        "format_fail": 0,
-        "judge_fail": 0,
-        "judge_guesses": ",".join(pg.guesses),
-        "clue": pc.clue,
-        "selected_targets": ",".join(pc.selected_targets),
-    }
+
+# ---------------------------------------------------------------------------
+# Guess task
+# ---------------------------------------------------------------------------
+
+async def _compute_score_guess(solution_str: str, extra_info: dict) -> dict:
+    """Operative scoring path.
+
+    Pipeline: parse rollout → score guess+thinking format → short-circuit
+    on format fail → rule-based ``task_reward`` directly on the trainee's
+    guesses.  No judge, no cosine fallback — the rules already verify
+    the guesses against the known board.
+    """
+    target_set = _as_list(extra_info.get("target_words", []))
+    non_target_set = _as_list(extra_info.get("non_target_words", []))
+    all_words = _as_list(extra_info.get("all_words", []))
+    if not all_words:
+        # Fallback: reconstruct from target + non_target if the row
+        # didn't ship an explicit all_words list.
+        all_words = list(target_set) + list(non_target_set)
+
+    reference_clue = str(extra_info.get("clue", "") or "")
+    max_guesses_raw = extra_info.get("num_max_guesses", extra_info.get("max_guesses"))
+
+    # -- 1. parse rollout --------------------------------------------------
+    pt = parse_thinking(solution_str)
+    pg = parse_guesses(solution_str)
+
+    # -- 2. format scores --------------------------------------------------
+    fmt = {}
+    fmt.update(thinking_format_scores(pt))
+    fmt.update(guess_format_scores(pg, all_words, max_guesses=max_guesses_raw))
+
+    format_ok = is_guess_format_ok(fmt)
+    parse_fail = int(not pg.tags_present)
+
+    # -- 3. short-circuit on guess-format failure -------------------------
+    if not format_ok:
+        task = zero_task_reward()
+        return _build_return(
+            fmt=fmt,
+            task=task,
+            parse_fail=parse_fail,
+            format_fail=1,
+            judge_fail=0,
+            judge_guesses=",".join(pg.guesses),
+            guess_diag=None,
+            cosine_diag=None,
+            clue=reference_clue,
+            selected_targets=[],
+        )
+
+    # -- 4. task reward (rule-based; no judge) ----------------------------
+    task = task_reward(pg.guesses, target_set, non_target_set)
+    return _build_return(
+        fmt=fmt,
+        task=task,
+        parse_fail=parse_fail,
+        format_fail=0,
+        judge_fail=0,
+        judge_guesses=",".join(pg.guesses),
+        guess_diag=None,
+        cosine_diag=None,
+        clue=reference_clue,
+        selected_targets=[],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Dispatcher
+# ---------------------------------------------------------------------------
+
+def _route_task(extra_info: dict) -> str:
+    """Return ``"guess"`` or ``"clue"`` based on ``extra_info["task"]``.
+
+    Matches on substring so both ``codenames_clue_generation`` and a
+    bare ``clue`` route correctly. Defaults to clue if the field is
+    missing or unrecognized.
+    """
+    raw = str(extra_info.get("task", "")).lower()
+    if "guess" in raw:
+        return "guess"
+    return "clue"
+
+
+async def compute_score(data_source, solution_str, ground_truth,
+                        extra_info=None, **kwargs) -> dict:
+    """VeRL-compatible async reward function.
+
+    Returns a dict with ``score`` (scalar used for optimization) plus
+    every sub-reward and diagnostic.  All dict values are copied into
+    ``reward_extra_info`` by the reward manager, so they show up
+    per-step in the training metrics.
+
+    Routes to the clue or guess scorer based on ``extra_info["task"]``.
+    """
+    extra_info = dict(extra_info or {})
+    task_kind = _route_task(extra_info)
+    if task_kind == "guess":
+        return await _compute_score_guess(solution_str, extra_info)
+    return await _compute_score_clue(solution_str, extra_info)

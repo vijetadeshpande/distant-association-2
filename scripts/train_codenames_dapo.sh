@@ -35,27 +35,42 @@ REWARD_FN_PATH="${REPO_ROOT}/custom_reward_functions/codenames_reward.py"
 TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-4B}"
 TRAINEE_MODEL_PATH="${TRAINEE_MODEL_PATH:-${TRAINEE_MODEL_ID}}"
 
+# Set JUDGE_MODEL_ID to "" or "none" to disable the judge entirely and
+# switch the reward function to GloVe-cosine mode (see cosine_reward.py).
 JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-Qwen/Qwen3-14B}"
 JUDGE_PORT="${JUDGE_PORT:-8000}"
 JUDGE_HOST="${JUDGE_HOST:-127.0.0.1}"
 JUDGE_SERVED_NAME="${JUDGE_SERVED_NAME:-qwen3-judge}"
 
+case "${JUDGE_MODEL_ID,,}" in
+  ""|none|null) USE_JUDGE=0 ;;
+  *)            USE_JUDGE=1 ;;
+esac
+
 # -----------------------------------------------------------------------------
 # 1. GPU split — training pool vs. judge pool
-#    Start Ray with ALL GPUs visible, but only advertise the training ones to
-#    VeRL via trainer.n_gpus_per_node. Pin the judge to the rest via
-#    CUDA_VISIBLE_DEVICES when we launch it.
+#    With a judge: start Ray with ALL GPUs visible, but only advertise the
+#    training ones to VeRL via trainer.n_gpus_per_node. Pin the judge to the
+#    rest via CUDA_VISIBLE_DEVICES when we launch it.
+#    Without a judge (cosine mode): give all GPUs to training.
 # -----------------------------------------------------------------------------
 TOTAL_GPUS="${TOTAL_GPUS:-8}"
-N_TRAIN_GPUS="${N_TRAIN_GPUS:-6}"          # VeRL sees only these
-N_JUDGE_GPUS="${N_JUDGE_GPUS:-2}"          # reserved for the judge
 ROLLOUT_TP="${ROLLOUT_TP:-2}"
 JUDGE_TP="${JUDGE_TP:-2}"
 
-TRAIN_GPU_IDS=$(seq -s, 0 $((N_TRAIN_GPUS - 1)))
-JUDGE_GPU_IDS=$(seq -s, ${N_TRAIN_GPUS} $((TOTAL_GPUS - 1)))
-
-echo "[layout] train GPUs=${TRAIN_GPU_IDS}   judge GPUs=${JUDGE_GPU_IDS}"
+if [ "${USE_JUDGE}" = "1" ]; then
+  N_TRAIN_GPUS="${N_TRAIN_GPUS:-6}"        # VeRL sees only these
+  N_JUDGE_GPUS="${N_JUDGE_GPUS:-2}"        # reserved for the judge
+  TRAIN_GPU_IDS=$(seq -s, 0 $((N_TRAIN_GPUS - 1)))
+  JUDGE_GPU_IDS=$(seq -s, ${N_TRAIN_GPUS} $((TOTAL_GPUS - 1)))
+  echo "[layout] mode=judge   train GPUs=${TRAIN_GPU_IDS}   judge GPUs=${JUDGE_GPU_IDS}"
+else
+  N_TRAIN_GPUS="${TOTAL_GPUS}"
+  N_JUDGE_GPUS=0
+  TRAIN_GPU_IDS=$(seq -s, 0 $((N_TRAIN_GPUS - 1)))
+  JUDGE_GPU_IDS=""
+  echo "[layout] mode=cosine  train GPUs=${TRAIN_GPU_IDS}   (no judge)"
+fi
 
 # -----------------------------------------------------------------------------
 # 2. Launch the judge vLLM server (Approach A).
@@ -112,23 +127,36 @@ stop_judge() {
     rm -f "${JUDGE_PIDFILE}"
   fi
 }
-trap stop_judge EXIT
+if [ "${USE_JUDGE}" = "1" ]; then
+  trap stop_judge EXIT
 
-# Skip judge launch if the user already has one running (set SKIP_JUDGE=1).
-if [ "${SKIP_JUDGE:-0}" != "1" ]; then
-  launch_judge
-  wait_for_judge
+  # Skip judge launch if the user already has one running (set SKIP_JUDGE=1).
+  if [ "${SKIP_JUDGE:-0}" != "1" ]; then
+    launch_judge
+    wait_for_judge
+  else
+    echo "[judge] SKIP_JUDGE=1 — assuming judge is already up at ${JUDGE_HOST}:${JUDGE_PORT}"
+  fi
+
+  # Reward function reads these env vars (see custom_reward_functions/judge_client.py)
+  export JUDGE_URL="http://${JUDGE_HOST}:${JUDGE_PORT}/v1/chat/completions"
+  export JUDGE_NAME="${JUDGE_SERVED_NAME}"
+  export JUDGE_CONCURRENCY="${JUDGE_CONCURRENCY:-128}"
+  export JUDGE_ENABLE_THINKING="${JUDGE_ENABLE_THINKING:-0}"
+  export JUDGE_MAX_TOKENS="${JUDGE_MAX_TOKENS:-256}"
+  export JUDGE_TEMPERATURE="${JUDGE_TEMPERATURE:-0.0}"
 else
-  echo "[judge] SKIP_JUDGE=1 — assuming judge is already up at ${JUDGE_HOST}:${JUDGE_PORT}"
+  # Cosine mode: unset JUDGE_NAME so cosine_reward.is_cosine_mode() flips on.
+  unset JUDGE_NAME JUDGE_URL
+  export GLOVE_NPY_PATH="${GLOVE_NPY_PATH:-${REPO_ROOT}/custom_data/glove_vectors/dolma_300_2024_1.2M.100_combined.npy}"
+  export GLOVE_VOCAB_PATH="${GLOVE_VOCAB_PATH:-${REPO_ROOT}/custom_data/glove_vectors/dolma_300_2024_1.2M.100_combined_vocab.pkl}"
+  echo "[cosine] GLOVE_NPY_PATH=${GLOVE_NPY_PATH}"
+  if [ ! -f "${GLOVE_NPY_PATH}" ] || [ ! -f "${GLOVE_VOCAB_PATH}" ]; then
+    echo "[cosine] GloVe artifacts missing. Build them first:" >&2
+    echo "  python scripts/build_glove_lookup.py custom_data/glove_vectors/dolma_300_2024_1.2M.100_combined.txt" >&2
+    exit 1
+  fi
 fi
-
-# Reward function reads these env vars (see custom_reward_functions/judge_client.py)
-export JUDGE_URL="http://${JUDGE_HOST}:${JUDGE_PORT}/v1/chat/completions"
-export JUDGE_NAME="${JUDGE_SERVED_NAME}"
-export JUDGE_CONCURRENCY="${JUDGE_CONCURRENCY:-128}"
-export JUDGE_ENABLE_THINKING="${JUDGE_ENABLE_THINKING:-0}"
-export JUDGE_MAX_TOKENS="${JUDGE_MAX_TOKENS:-256}"
-export JUDGE_TEMPERATURE="${JUDGE_TEMPERATURE:-0.0}"
 
 # Make `custom_reward_functions` importable when VeRL loads the reward file.
 export PYTHONPATH="${REPO_ROOT}:${PYTHONPATH:-}"

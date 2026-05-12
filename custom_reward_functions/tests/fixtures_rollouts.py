@@ -122,3 +122,109 @@ JUDGE_OUTPUT_MIXED = """\
 
 TARGETS = ["north america", "africa"]
 NON_TARGETS = ["thanatophobia", "pyrophobia"]
+ALL_WORDS = ["north america", "thanatophobia", "africa", "pyrophobia"]
+
+
+# ---------------------------------------------------------------------------
+# Trainee-side guess-task rollouts.  Same 5-section CoT shell as the
+# clue rollouts; the <output> block carries a [CODENAMES-GUESS-...] block
+# (NOT the [CODENAMES-CLUE-...] block).
+# ---------------------------------------------------------------------------
+
+GOOD_GUESS_ROLLOUT = """\
+<thinking>
+The clue is "continent". Look for matching words.
+</thinking>
+<reasoning>
+North America and Africa are both continents.
+</reasoning>
+<reflection>
+Pyrophobia and thanatophobia are fears, not continents — exclude them.
+</reflection>
+<adjustment>
+No adjustments needed.
+</adjustment>
+<output>
+[CODENAMES-GUESS-START]
+[Guesses]: [NORTH AMERICA, AFRICA]
+[CODENAMES-GUESS-END]
+</output>
+"""
+
+# Same as GOOD_GUESS_ROLLOUT but only one guess (still <= max_guesses).
+# Single-word target (AFRICA) avoids the parser's whitespace-fallback
+# split that would otherwise turn "NORTH AMERICA" into two tokens.
+PARTIAL_GUESS_ROLLOUT = """\
+<thinking>x</thinking>
+<reasoning>x</reasoning>
+<reflection>x</reflection>
+<adjustment>x</adjustment>
+<output>
+[CODENAMES-GUESS-START]
+[Guesses]: [AFRICA]
+[CODENAMES-GUESS-END]
+</output>
+"""
+
+# Guess block missing entirely.
+NO_GUESS_BLOCK_ROLLOUT = """\
+<thinking>x</thinking>
+<reasoning>x</reasoning>
+<reflection>x</reflection>
+<adjustment>x</adjustment>
+<output>
+I am not sure which words to guess.
+</output>
+"""
+
+# Empty [Guesses]: list.
+EMPTY_GUESS_LIST_ROLLOUT = """\
+<thinking>x</thinking>
+<reasoning>x</reasoning>
+<reflection>x</reflection>
+<adjustment>x</adjustment>
+<output>
+[CODENAMES-GUESS-START]
+[Guesses]: []
+[CODENAMES-GUESS-END]
+</output>
+"""
+
+# Includes a word that isn't on the board.
+OFF_BOARD_GUESS_ROLLOUT = """\
+<thinking>x</thinking>
+<reasoning>x</reasoning>
+<reflection>x</reflection>
+<adjustment>x</adjustment>
+<output>
+[CODENAMES-GUESS-START]
+[Guesses]: [NORTH AMERICA, ATLANTIS]
+[CODENAMES-GUESS-END]
+</output>
+"""
+
+# Returns more guesses than max_guesses (used with max_guesses=2 -> 3 guesses).
+OVER_LIMIT_GUESS_ROLLOUT = """\
+<thinking>x</thinking>
+<reasoning>x</reasoning>
+<reflection>x</reflection>
+<adjustment>x</adjustment>
+<output>
+[CODENAMES-GUESS-START]
+[Guesses]: [NORTH AMERICA, AFRICA, PYROPHOBIA]
+[CODENAMES-GUESS-END]
+</output>
+"""
+
+# All guesses land on the non-target set.
+ALL_WRONG_GUESS_ROLLOUT = """\
+<thinking>x</thinking>
+<reasoning>x</reasoning>
+<reflection>x</reflection>
+<adjustment>x</adjustment>
+<output>
+[CODENAMES-GUESS-START]
+[Guesses]: [PYROPHOBIA, THANATOPHOBIA]
+[CODENAMES-GUESS-END]
+</output>
+"""

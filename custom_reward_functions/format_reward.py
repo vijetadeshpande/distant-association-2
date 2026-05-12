@@ -75,15 +75,37 @@ def clue_format_scores(parsed: CluePhase, target_set, non_target_set) -> dict:
     }
 
 
-def guess_format_scores(parsed: GuessPhase, all_words) -> dict:
-    """Diagnostic-only scorer for the judge output.  Not folded into the
-    trainee's reward; we log it to catch judge-side format drift early."""
+def guess_format_scores(parsed: GuessPhase, all_words, max_guesses=None) -> dict:
+    """Score the guess block's format.
+
+    Used in two places:
+
+    * **Clue task, judge mode** — diagnostic only.  The trainee can't
+      control judge output, so these aren't folded into the reward.
+      Called with ``max_guesses=None``, which trivially passes the
+      count check (score 0).
+    * **Guess task** — the trainee owns the guess block, so every
+      sub-score here is a real format-reward term.  Called with
+      ``max_guesses`` from the prompt so we can penalize over-limit
+      guess lists.
+    """
     all_norm = _normalize_set(all_words)
     guess_norm = _normalize_set(parsed.guesses) if parsed.guesses else set()
+
+    if max_guesses is None:
+        count_ok = True   # not enforced when caller doesn't supply a limit
+    else:
+        try:
+            limit = int(max_guesses)
+        except (TypeError, ValueError):
+            limit = 0
+        count_ok = len(parsed.guesses) <= limit
+
     return {
         "guess_tags_present": _pen(parsed.tags_present),
         "guess_nonempty": _pen(parsed.guesses_nonempty),
         "guess_all_in_board": _pen(bool(guess_norm) and guess_norm.issubset(all_norm)),
+        "guess_count_ok": _pen(count_ok),
     }
 
 
@@ -96,5 +118,23 @@ def is_clue_format_ok(scores: dict) -> bool:
         "clue_selected_nonempty",
         "clue_selected_subset",
         "clue_no_morph_variant",
+    )
+    return all(scores.get(k, PENALTY) == 0.0 for k in keys)
+
+
+def is_guess_format_ok(scores: dict) -> bool:
+    """Every guess-format sub-check passed (score == 0.0).
+
+    Used by the guess-task ``_compute_score_guess`` to short-circuit
+    the task reward to zero on format failure.  Over-limit guess
+    counts (``guess_count_ok``) and off-board guesses
+    (``guess_all_in_board``) are treated as hard format fails per
+    project decision.
+    """
+    keys = (
+        "guess_tags_present",
+        "guess_nonempty",
+        "guess_all_in_board",
+        "guess_count_ok",
     )
     return all(scores.get(k, PENALTY) == 0.0 for k in keys)
