@@ -43,7 +43,7 @@ TRAIN_PARQUET="${TRAIN_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/versio
 VAL_PARQUET="${VAL_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-5/codenames_rlvr_val.parquet}"
 REWARD_FN_PATH="${REPO_ROOT}/custom_reward_functions/codenames_reward.py"
 
-TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-4B}"
+TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-1.7B}"
 TRAINEE_MODEL_PATH="${TRAINEE_MODEL_PATH:-${TRAINEE_MODEL_ID}}"
 
 # Default: no judge. Clue rows score via GloVe-cosine, guess rows score
@@ -223,7 +223,7 @@ filter_groups_metric=seq_reward
 max_num_gen_batches=10
 
 train_traj_micro_bsz_per_gpu=1
-n_resp_per_prompt=4
+n_resp_per_prompt=8
 
 train_traj_micro_bsz=$((train_traj_micro_bsz_per_gpu * N_TRAIN_GPUS))
 train_traj_mini_bsz=$((train_traj_micro_bsz * 2))
@@ -231,7 +231,7 @@ train_prompt_mini_bsz=$((train_traj_mini_bsz * n_resp_per_prompt))
 train_prompt_bsz=$((train_prompt_mini_bsz * 2))
 gen_prompt_bsz=$((train_prompt_bsz * 4))
 
-total_epochs=8
+total_epochs=4
 
 # Save ~4 checkpoints per run (every 25%). DAPO with filter_groups consumes
 # `gen_prompt_bsz` from the dataloader per step (not `train_prompt_bsz`) —
