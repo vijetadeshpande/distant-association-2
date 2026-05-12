@@ -29,13 +29,11 @@ def _stub_table(monkeypatch):
     ]).astype(np.float32)
     monkeypatch.setattr(cosine_reward, "_MATRIX", matrix, raising=False)
     monkeypatch.setattr(cosine_reward, "_VOCAB", vocab, raising=False)
-    monkeypatch.setattr(cosine_reward, "_LOAD_FAILED", False, raising=False)
 
 
 def _clear_table_cache(monkeypatch):
     monkeypatch.setattr(cosine_reward, "_MATRIX", None, raising=False)
     monkeypatch.setattr(cosine_reward, "_VOCAB", None, raising=False)
-    monkeypatch.setattr(cosine_reward, "_LOAD_FAILED", False, raising=False)
 
 
 def _run(coro):
@@ -135,13 +133,15 @@ def test_cosine_empty_parsed_clue(monkeypatch):
     assert r["oov"] == 1
 
 
-def test_cosine_table_missing_returns_zero(monkeypatch, tmp_path):
+def test_cosine_table_missing_raises(monkeypatch, tmp_path):
+    """Missing GloVe artifacts must be a hard error, not a silent zero
+    — otherwise a misconfigured run would train against an all-zero
+    reward signal without anyone noticing."""
     _clear_table_cache(monkeypatch)
     monkeypatch.setenv("GLOVE_NPY_PATH", str(tmp_path / "missing.npy"))
     monkeypatch.setenv("GLOVE_VOCAB_PATH", str(tmp_path / "missing.pkl"))
-    r = cosine_reward.cosine_reward("continent", "continent")
-    assert r["oov"] == 1
-    assert r["cosine_sim"] == 0.0
+    with pytest.raises(FileNotFoundError):
+        cosine_reward.cosine_reward("continent", "continent")
 
 
 # ---------- compute_score end-to-end in cosine mode -----------------------

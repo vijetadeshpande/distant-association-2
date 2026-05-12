@@ -168,20 +168,46 @@ else
   # we build them on the fly if the source text is present.  The
   # build script is idempotent (re-running on fresh artifacts costs
   # ~100ms).
-  GLOVE_SRC="${GLOVE_SRC:-${REPO_ROOT}/custom_data/glove_vectors/dolma_300_2024_1.2M.100_combined.txt}"
-  GLOVE_STEM="${GLOVE_SRC%.txt}"
+  # Prefer the raw .txt if it's already extracted (faster — one
+  # decompression pass less); otherwise fall back to the .zip which
+  # the build script can stream from directly without extracting.
+  GLOVE_TXT="${REPO_ROOT}/custom_data/glove_vectors/dolma_300_2024_1.2M.100_combined.txt"
+  GLOVE_ZIP="${REPO_ROOT}/custom_data/glove_vectors/glove.2024.dolma.300d.zip"
+  if [ -z "${GLOVE_SRC:-}" ]; then
+    if [ -f "${GLOVE_TXT}" ]; then
+      GLOVE_SRC="${GLOVE_TXT}"
+    else
+      GLOVE_SRC="${GLOVE_ZIP}"
+    fi
+  fi
+  # Canonical artifact stem — same regardless of source (.txt or .zip),
+  # so the .npy/.pkl cache is reusable across servers.
+  GLOVE_STEM="${REPO_ROOT}/custom_data/glove_vectors/dolma_300_2024_1.2M.100_combined"
   export GLOVE_NPY_PATH="${GLOVE_NPY_PATH:-${GLOVE_STEM}.npy}"
   export GLOVE_VOCAB_PATH="${GLOVE_VOCAB_PATH:-${GLOVE_STEM}_vocab.pkl}"
   echo "[cosine] GLOVE_NPY_PATH=${GLOVE_NPY_PATH}"
 
   if [ ! -f "${GLOVE_NPY_PATH}" ] || [ ! -f "${GLOVE_VOCAB_PATH}" ]; then
     if [ -f "${GLOVE_SRC}" ]; then
-      echo "[cosine] artifacts missing — building from ${GLOVE_SRC} (~80s)"
-      python3 "${REPO_ROOT}/scripts/build_glove_lookup.py" "${GLOVE_SRC}"
+      echo "[cosine] artifacts missing — building from ${GLOVE_SRC}"
+      python3 "${REPO_ROOT}/scripts/build_glove_lookup.py" \
+          "${GLOVE_SRC}" --output-stem "${GLOVE_STEM}"
     else
-      echo "[cosine] WARN: GloVe source ${GLOVE_SRC} not found." >&2
-      echo "[cosine]       Required for clue-task rows; harmless for guess-only datasets." >&2
+      echo "[cosine] ERROR: GloVe artifacts missing AND source not found." >&2
+      echo "[cosine]        expected one of:" >&2
+      echo "[cosine]          ${GLOVE_TXT}" >&2
+      echo "[cosine]          ${GLOVE_ZIP}" >&2
+      echo "[cosine]        Provide the .txt or .zip, or override GLOVE_SRC=<path>." >&2
+      echo "[cosine]        (To run with judge instead, set JUDGE_MODEL_ID=<hf id>.)" >&2
+      exit 1
     fi
+  fi
+  # Post-build verification — the build must have produced both artifacts.
+  if [ ! -f "${GLOVE_NPY_PATH}" ] || [ ! -f "${GLOVE_VOCAB_PATH}" ]; then
+    echo "[cosine] ERROR: build_glove_lookup.py finished but artifacts are still missing:" >&2
+    echo "[cosine]          ${GLOVE_NPY_PATH}" >&2
+    echo "[cosine]          ${GLOVE_VOCAB_PATH}" >&2
+    exit 1
   fi
 fi
 

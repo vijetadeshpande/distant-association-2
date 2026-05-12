@@ -59,48 +59,45 @@ def _default_vocab_for(npy_path: Path) -> Path:
 
 _MATRIX: np.ndarray | None = None
 _VOCAB: dict[str, int] | None = None
-_LOAD_FAILED: bool = False
 
 
-def _get_table() -> tuple[np.ndarray | None, dict[str, int] | None]:
-    """Lazy module-level load. Returns ``(None, None)`` on failure so
-    callers can fall back to ``cosine_sim = 0`` rather than crashing
-    the whole training loop."""
-    global _MATRIX, _VOCAB, _LOAD_FAILED
+def _get_table() -> tuple[np.ndarray, dict[str, int]]:
+    """Lazy module-level load. Raises ``FileNotFoundError`` if the
+    GloVe artifacts are missing — a missing table means cosine rewards
+    would silently be zero across the entire run, which we'd rather
+    catch loudly than mask. The shell launcher pre-checks this case
+    too; this raise is a defense-in-depth tripwire for any code path
+    that bypasses the launcher."""
+    global _MATRIX, _VOCAB
     if _MATRIX is not None and _VOCAB is not None:
         return _MATRIX, _VOCAB
-    if _LOAD_FAILED:
-        return None, None
 
     npy_path = Path(os.environ.get("GLOVE_NPY_PATH", str(_DEFAULT_NPY)))
     vocab_path = Path(os.environ.get("GLOVE_VOCAB_PATH", str(_default_vocab_for(npy_path))))
 
-    try:
-        # mmap_mode='r' lets multiple worker processes share the matrix
-        # via the OS page cache instead of each loading its own 1.4 GB.
-        matrix = np.load(npy_path, mmap_mode="r")
-        with vocab_path.open("rb") as f:
-            vocab = pickle.load(f)
-    except FileNotFoundError as e:
-        logger.error(
-            "GloVe lookup artifacts not found (%s). Run scripts/build_glove_lookup.py first. "
-            "Cosine reward will return 0 for every sample.",
-            e,
+    missing = [str(p) for p in (npy_path, vocab_path) if not p.exists()]
+    if missing:
+        raise FileNotFoundError(
+            "GloVe lookup artifacts not found:\n  "
+            + "\n  ".join(missing)
+            + "\nBuild them with: "
+              "python scripts/build_glove_lookup.py <path-to-.txt-or-.zip>"
         )
-        _LOAD_FAILED = True
-        return None, None
-    except Exception as e:  # pickle / numpy load errors
-        logger.exception("Failed to load GloVe lookup table: %r", e)
-        _LOAD_FAILED = True
-        return None, None
+
+    # mmap_mode='r' lets multiple worker processes share the matrix
+    # via the OS page cache instead of each loading its own 1.4 GB.
+    matrix = np.load(npy_path, mmap_mode="r")
+    with vocab_path.open("rb") as f:
+        vocab = pickle.load(f)
 
     if not isinstance(vocab, dict):
-        logger.error("GloVe vocab pickle at %s is not a dict (got %s).", vocab_path, type(vocab))
-        _LOAD_FAILED = True
-        return None, None
+        raise RuntimeError(
+            f"GloVe vocab pickle at {vocab_path} is not a dict (got {type(vocab).__name__})."
+        )
 
     _MATRIX, _VOCAB = matrix, vocab
-    logger.info("Loaded GloVe table: %d words, dim=%d from %s", matrix.shape[0], matrix.shape[1], npy_path)
+    logger.info("Loaded GloVe table: %d words, dim=%d from %s",
+                matrix.shape[0], matrix.shape[1], npy_path)
     return _MATRIX, _VOCAB
 
 
@@ -125,12 +122,10 @@ def cosine_reward(parsed_clue: str, target_clue: str) -> dict[str, Any]:
 
     Returns the same shape as ``task_reward`` (so the aggregator can
     treat both paths uniformly), plus two diagnostics: ``cosine_sim``
-    and ``oov``. ``oov`` is 1 if either word is missing from the table
-    (or if the table failed to load).
+    and ``oov``. ``oov`` is 1 if either word is missing from the
+    table. If the table itself can't be loaded, ``_get_table`` raises.
     """
     matrix, vocab = _get_table()
-    if matrix is None or vocab is None:
-        return _zero_cosine_reward(oov=1)
 
     v_clue = _lookup(parsed_clue, vocab, matrix)
     v_target = _lookup(target_clue, vocab, matrix)
