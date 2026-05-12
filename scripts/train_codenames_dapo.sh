@@ -1,14 +1,25 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# Train an LLM with DAPO on Codenames using our custom async reward function
-# that consults an external vLLM judge server.
+# Train an LLM with DAPO on Codenames. The reward function dispatches
+# per-row based on extra_info["task"]:
+#   - clue task: judge-LLM scoring OR GloVe-cosine fallback
+#   - guess task: pure rule-based scoring, no external resources
 #
-# Pipeline diagram
+# Three modes selected by JUDGE_MODEL_ID:
+#   - JUDGE_MODEL_ID="" / "none" (DEFAULT)  -> no judge
+#       * clue rows score via GloVe cosine against extra_info["clue"]
+#       * guess rows score by rules; GloVe artifacts are not consulted
+#       * all GPUs go to training
+#   - JUDGE_MODEL_ID=<hf id>                 -> launch judge vLLM server
+#       * clue rows score via judge HTTP; guess rows still skip the judge
+#       * GPU split N_TRAIN_GPUS / N_JUDGE_GPUS
+#
+# Pipeline diagram (judge mode)
 #
 #     +---------------------------+        HTTP         +--------------------+
 #     |  VeRL driver + Ray head   |  ---------------->  |  vLLM judge server |
-#     |  Qwen3-8B FSDP actor      |   OpenAI /v1/chat   |  Qwen3-30B-A3B     |
-#     |  + vLLM rollout (TP=2)    |                     |  AWQ-4bit (TP=2)   |
+#     |  Qwen3 FSDP actor         |   OpenAI /v1/chat   |  judge model       |
+#     |  + vLLM rollout (TP=N)    |                     |  (TP=JUDGE_TP)     |
 #     |  GPUs 0..N_TRAIN_GPUS-1   |                     |  GPUs N_TRAIN..N-1 |
 #     +---------------------------+                     +--------------------+
 #
@@ -35,9 +46,9 @@ REWARD_FN_PATH="${REPO_ROOT}/custom_reward_functions/codenames_reward.py"
 TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-4B}"
 TRAINEE_MODEL_PATH="${TRAINEE_MODEL_PATH:-${TRAINEE_MODEL_ID}}"
 
-# Set JUDGE_MODEL_ID to "" or "none" to disable the judge entirely and
-# switch the reward function to GloVe-cosine mode (see cosine_reward.py).
-JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-Qwen/Qwen3-14B}"
+# Default: no judge. Clue rows score via GloVe-cosine, guess rows score
+# by rules. Override with JUDGE_MODEL_ID=<hf id> to launch the judge.
+JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-}"
 JUDGE_PORT="${JUDGE_PORT:-8000}"
 JUDGE_HOST="${JUDGE_HOST:-127.0.0.1}"
 JUDGE_SERVED_NAME="${JUDGE_SERVED_NAME:-qwen3-judge}"
@@ -146,15 +157,31 @@ if [ "${USE_JUDGE}" = "1" ]; then
   export JUDGE_MAX_TOKENS="${JUDGE_MAX_TOKENS:-256}"
   export JUDGE_TEMPERATURE="${JUDGE_TEMPERATURE:-0.0}"
 else
-  # Cosine mode: unset JUDGE_NAME so cosine_reward.is_cosine_mode() flips on.
+  # Judge disabled. Unset JUDGE_NAME so cosine_reward.is_cosine_mode()
+  # flips on for any clue rows in the dataset. Guess rows never read
+  # these envs, so a guess-only run works regardless of GloVe state.
   unset JUDGE_NAME JUDGE_URL
-  export GLOVE_NPY_PATH="${GLOVE_NPY_PATH:-${REPO_ROOT}/custom_data/glove_vectors/dolma_300_2024_1.2M.100_combined.npy}"
-  export GLOVE_VOCAB_PATH="${GLOVE_VOCAB_PATH:-${REPO_ROOT}/custom_data/glove_vectors/dolma_300_2024_1.2M.100_combined_vocab.pkl}"
+
+  # GLOVE_SRC is the raw text file; .npy and _vocab.pkl are derived
+  # artifacts produced by scripts/build_glove_lookup.py.  When this
+  # script is run on a fresh GPU server, the artifacts won't exist —
+  # we build them on the fly if the source text is present.  The
+  # build script is idempotent (re-running on fresh artifacts costs
+  # ~100ms).
+  GLOVE_SRC="${GLOVE_SRC:-${REPO_ROOT}/custom_data/glove_vectors/dolma_300_2024_1.2M.100_combined.txt}"
+  GLOVE_STEM="${GLOVE_SRC%.txt}"
+  export GLOVE_NPY_PATH="${GLOVE_NPY_PATH:-${GLOVE_STEM}.npy}"
+  export GLOVE_VOCAB_PATH="${GLOVE_VOCAB_PATH:-${GLOVE_STEM}_vocab.pkl}"
   echo "[cosine] GLOVE_NPY_PATH=${GLOVE_NPY_PATH}"
+
   if [ ! -f "${GLOVE_NPY_PATH}" ] || [ ! -f "${GLOVE_VOCAB_PATH}" ]; then
-    echo "[cosine] GloVe artifacts missing. Build them first:" >&2
-    echo "  python scripts/build_glove_lookup.py custom_data/glove_vectors/dolma_300_2024_1.2M.100_combined.txt" >&2
-    exit 1
+    if [ -f "${GLOVE_SRC}" ]; then
+      echo "[cosine] artifacts missing — building from ${GLOVE_SRC} (~80s)"
+      python3 "${REPO_ROOT}/scripts/build_glove_lookup.py" "${GLOVE_SRC}"
+    else
+      echo "[cosine] WARN: GloVe source ${GLOVE_SRC} not found." >&2
+      echo "[cosine]       Required for clue-task rows; harmless for guess-only datasets." >&2
+    fi
   fi
 fi
 
@@ -204,7 +231,7 @@ train_prompt_mini_bsz=$((train_traj_mini_bsz * n_resp_per_prompt))
 train_prompt_bsz=$((train_prompt_mini_bsz * 2))
 gen_prompt_bsz=$((train_prompt_bsz * 4))
 
-total_epochs=16
+total_epochs=8
 
 # Save ~4 checkpoints per run (every 25%). DAPO with filter_groups consumes
 # `gen_prompt_bsz` from the dataloader per step (not `train_prompt_bsz`) —
