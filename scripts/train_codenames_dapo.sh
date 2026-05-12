@@ -245,7 +245,8 @@ save_freq=$(( total_train_steps / 4 ))
 [ "${save_freq}" -lt 1 ] && save_freq=1
 echo "[ckpt] dataset_rows=${dataset_rows} total_train_steps=${total_train_steps} save_freq=${save_freq}"
 
-EXP_NAME="codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")-$(date +%Y%m%d-%H%M%S)"
+EXP_NAME_PREFIX="${EXP_NAME_PREFIX:-codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")}"
+EXP_NAME="${EXP_NAME_PREFIX}-$(date +%Y%m%d-%H%M%S)"
 
 # -----------------------------------------------------------------------------
 # 4. Launch DAPO training.
