@@ -37,8 +37,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${REPO_ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 cd "${REPO_ROOT}"
 
-TRAIN_PARQUET="${TRAIN_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-4/codenames_rlvr_clue_gen_train.parquet}"
-VAL_PARQUET="${VAL_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-4/codenames_rlvr_clue_gen_val.parquet}"
+TRAIN_PARQUET="${TRAIN_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-5/codenames_rlvr_train.parquet}"
+VAL_PARQUET="${VAL_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-5/codenames_rlvr_val.parquet}"
 REWARD_FN_PATH="${REPO_ROOT}/custom_reward_functions/codenames_reward.py"
 
 TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-8B}"
