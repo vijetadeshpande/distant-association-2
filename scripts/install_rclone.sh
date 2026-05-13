@@ -1,4 +1,5 @@
 # 1. Download the specific linux-amd64 zip package from rclone downloads
+apt install zip -y
 curl -O https://downloads.rclone.org/rclone-current-linux-amd64.zip
 
 # 2. Extract the package
