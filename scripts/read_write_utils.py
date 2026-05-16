@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-def copy_to_gdrive(local_path, remote_folder_name="gdrive-distant-association:distant-association-drive/"):
+def copy_to_gdrive(local_path, remote_folder_name="gdrive-distant-association:distant-association-drive"):
     """
     Copies a file or folder to a specific folder on your mounted Google Drive.
     

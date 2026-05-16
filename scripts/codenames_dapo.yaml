@@ -1,0 +1,104 @@
+# Fixed training hyperparameters for Codenames DAPO.
+#
+# Dynamic values injected by train_codenames_dapo.sh at launch time:
+#   data.train_files / val_files       parquet paths
+#   data.train_batch_size              derived from GPU count
+#   data.gen_batch_size                oversampling batch (filter_groups)
+#   actor_rollout_ref.model.path       trainee model
+#   actor_rollout_ref.rollout.n        responses per prompt
+#   actor_rollout_ref.rollout.tensor_model_parallel_size
+#   actor_rollout_ref.actor/rollout/ref.*_micro_batch_size_per_gpu
+#   reward.custom_reward_function.path absolute path to codenames_reward.py
+#   reward.reward_kwargs.judge_model   omitted → cosine mode
+#   reward.reward_kwargs.judge_backend "openrouter" (default) or "local"
+#   trainer.n_gpus_per_node            training-side GPU count
+#   trainer.experiment_name            timestamped run name
+#   trainer.save_freq                  computed from dataset size
+
+hydra:
+  searchpath:
+    - file://verl/trainer/config   # relative to REPO_ROOT (shell script cds there)
+
+defaults:
+  - ppo_trainer
+  - _self_
+
+# ---------------------------------------------------------------------------
+# Data
+# ---------------------------------------------------------------------------
+data:
+  max_prompt_length: 2048
+  max_response_length: 16384
+
+# ---------------------------------------------------------------------------
+# Actor / rollout / ref
+# ---------------------------------------------------------------------------
+actor_rollout_ref:
+  model:
+    use_remove_padding: True
+    use_fused_kernels: True
+  actor:
+    optim:
+      lr: 1e-6
+    use_kl_loss: False
+    kl_loss_coef: 0.0
+    clip_ratio_low: 0.2
+    clip_ratio_high: 0.28
+    loss_agg_mode: token-mean
+    fsdp_config:
+      param_offload: True
+      optimizer_offload: True
+  ref:
+    fsdp_config:
+      param_offload: True
+  rollout:
+    name: vllm
+    gpu_memory_utilization: 0.85
+    checkpoint_engine:
+      update_weights_bucket_megabytes: 3072
+
+# ---------------------------------------------------------------------------
+# Reward
+# ---------------------------------------------------------------------------
+reward_model:
+  enable: False
+
+reward:
+  reward_manager:
+    name: dapo
+  custom_reward_function:
+    name: compute_score
+    # path: set by shell script (absolute path required)
+  reward_kwargs:
+    overlong_buffer_cfg:
+      enable: True
+      len: 4096
+      penalty_factor: 1.0
+      log: False
+    max_resp_len: ${data.max_response_length}
+    # judge_model / judge_backend: injected by shell script when using a judge;
+    # omitting them activates cosine-similarity mode (no external calls).
+
+# ---------------------------------------------------------------------------
+# Algorithm  (DAPO = GRPO + filter_groups + overlong_buffer)
+# ---------------------------------------------------------------------------
+algorithm:
+  adv_estimator: grpo
+  use_kl_in_reward: False
+  kl_ctrl:
+    kl_coef: 0.0
+  filter_groups:
+    enable: True
+    metric: seq_reward
+    max_num_gen_batches: 10
+
+# ---------------------------------------------------------------------------
+# Trainer
+# ---------------------------------------------------------------------------
+trainer:
+  total_epochs: 4
+  nnodes: 1
+  project_name: Distant-Association
+  logger: [console, wandb]
+  resume_mode: disable
+  val_before_train: False

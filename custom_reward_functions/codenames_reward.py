@@ -41,7 +41,6 @@ from typing import Any
 
 from custom_reward_functions.cosine_reward import (
     cosine_reward,
-    is_cosine_mode,
     zero_cosine_reward,
 )
 from custom_reward_functions.format_reward import (
@@ -99,28 +98,33 @@ _ALL_FORMAT_KEYS: tuple[str, ...] = (
 )
 
 
-def _aggregate(fmt_scores: dict, task_scores: dict) -> float:
-    """Arithmetic mean over every format sub-reward and every task
-    sub-reward except the composite ``task`` key (kept separately for
-    logging).
+# Format keys computed and logged to wandb but excluded from the
+# format gate in _aggregate. They still flow into the return dict via
+# _build_return → padded_fmt, so wandb keeps logging them per-step.
+_GATE_EXCLUDED_FMT_KEYS: frozenset[str] = frozenset({
+    "thinking_all_present",
+    "thinking_in_order",
+})
 
-    Only keys actually present in ``fmt_scores`` are aggregated, so
-    a path that scored clue-format keys (e.g. the clue task) ignores
-    guess-format keys, and vice versa.
+
+def _aggregate(fmt_scores: dict, task_scores: dict) -> float:
+    """Hard-gate format, then pass through the task scalar.
+
+    If any non-excluded format sub-reward is negative, return its
+    minimum (always -1.0 since format scores are drawn from
+    ``{-1.0, 0.0}``). Otherwise return the composite ``task`` value
+    untouched — cosine_sim in cosine mode, ``pos_correct -
+    neg_nontarget - neg_invalid`` in judge/guess mode. No averaging.
+
+    Thinking-format keys are excluded from the gate but still logged.
     """
-    terms: list[float] = []
-    terms.extend(float(v) for v in fmt_scores.values())
-    for k, v in task_scores.items():
-        if k == "task":
-            continue
-        # Tasks have opposite signs for positive / negative terms.
-        if k == "pos_correct":
-            terms.append(float(v))
-        else:
-            terms.append(-float(v))
-    if not terms:
-        return 0.0
-    return sum(terms) / len(terms)
+    fmt_values = [
+        float(v) for k, v in fmt_scores.items()
+        if k not in _GATE_EXCLUDED_FMT_KEYS
+    ]
+    if fmt_values and any(v < 0.0 for v in fmt_values):
+        return min(fmt_values)
+    return float(task_scores.get("task", 0.0))
 
 
 def _build_return(
@@ -173,18 +177,24 @@ def _build_return(
 # Clue task
 # ---------------------------------------------------------------------------
 
-async def _compute_score_clue(solution_str: str, extra_info: dict) -> dict:
+async def _compute_score_clue(solution_str: str, extra_info: dict,
+                              judge_model: str | None = None,
+                              judge_backend: str = "openrouter") -> dict:
     """Spymaster scoring path.
 
     Pipeline: parse rollout → score clue+thinking format → short-circuit
-    on format fail → step-4 task reward via judge HTTP (or GloVe-cosine
-    if ``JUDGE_NAME`` is unset).
+    on format fail → step-4 task reward via judge HTTP (openrouter or
+    local vLLM) or GloVe-cosine when ``judge_model`` is ``None``.
+
+    ``judge_model=None``               → cosine-similarity reward
+    ``judge_model=<name>``, backend="openrouter" → OpenRouter API
+    ``judge_model=<name>``, backend="local"      → local vLLM server
     """
     target_set = _as_list(extra_info.get("target_words", []))
     non_target_set = _as_list(extra_info.get("non_target_words", []))
     target_clue = str(extra_info.get("clue", "") or "")
 
-    cosine_mode = is_cosine_mode()
+    cosine_mode = judge_model is None
 
     # -- 1. parse rollout --------------------------------------------------
     pt = parse_thinking(solution_str)
@@ -246,13 +256,15 @@ async def _compute_score_clue(solution_str: str, extra_info: dict) -> dict:
     sem = _get_sem()
     judge_text: str | None = None
     try:
-        async with make_session() as session:
+        async with make_session(backend=judge_backend) as session:
             judge_text = await judge_guess(
                 session=session,
                 sem=sem,
                 all_words=all_words,
                 clue=pc.clue,
                 max_guesses=len(pc.selected_targets),
+                model=judge_model,
+                backend=judge_backend,
             )
     except Exception as e:  # network / protocol errors only; log and fall through
         logger.exception("Judge call crashed: %r", e)
@@ -378,7 +390,8 @@ def _route_task(extra_info: dict) -> str:
 
 
 async def compute_score(data_source, solution_str, ground_truth,
-                        extra_info=None, **kwargs) -> dict:
+                        extra_info=None, judge_model: str | None = None,
+                        judge_backend: str = "openrouter", **kwargs) -> dict:
     """VeRL-compatible async reward function.
 
     Returns a dict with ``score`` (scalar used for optimization) plus
@@ -386,10 +399,20 @@ async def compute_score(data_source, solution_str, ground_truth,
     ``reward_extra_info`` by the reward manager, so they show up
     per-step in the training metrics.
 
+    Pass via ``custom_reward_function.reward_kwargs`` in the VeRL config:
+
+      ``judge_model=null``                     → cosine-similarity reward
+      ``judge_model="openai/gpt-4o"``          → OpenRouter (default backend)
+      ``judge_model="qwen3-judge"``
+      ``judge_backend="local"``                → local vLLM server on GPUs
+
     Routes to the clue or guess scorer based on ``extra_info["task"]``.
+    Guess task never uses the judge; judge args are clue-task-only.
     """
     extra_info = dict(extra_info or {})
     task_kind = _route_task(extra_info)
     if task_kind == "guess":
         return await _compute_score_guess(solution_str, extra_info)
-    return await _compute_score_clue(solution_str, extra_info)
+    return await _compute_score_clue(solution_str, extra_info,
+                                     judge_model=judge_model,
+                                     judge_backend=judge_backend)

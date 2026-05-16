@@ -47,11 +47,10 @@ Aggregate
 
     task = pos_correct - neg_nontarget - neg_invalid
 
-Range: ``[-2, 1]``.  The upstream aggregator in ``codenames_reward`` takes
-the arithmetic mean of all format sub-rewards and all task sub-rewards,
-so this module only needs to return the individual numbers; the weighting
-is controlled at the aggregator level (and kept to a simple mean by
-user preference).
+Range: ``[-2, 1]``.  The upstream aggregator in ``codenames_reward``
+hard-gates on format (returning -1.0 if any format check failed) and
+otherwise passes ``task`` through as the final score, so the composite
+value computed here is the optimization target when format is clean.
 """
 from __future__ import annotations
 

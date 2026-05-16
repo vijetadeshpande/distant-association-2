@@ -37,8 +37,20 @@ import aiohttp
 
 logger = logging.getLogger(__name__)
 
-JUDGE_URL = os.environ.get("JUDGE_URL", "http://127.0.0.1:8000/v1/chat/completions")
-JUDGE_NAME = os.environ.get("JUDGE_NAME", "qwen3-judge")
+# ---------------------------------------------------------------------------
+# Backend URLs
+#   judge_backend="openrouter"  →  _OPENROUTER_URL  (requires OPENROUTER_API_KEY)
+#   judge_backend="local"       →  _LOCAL_JUDGE_URL  (local vLLM server on GPUs)
+# Model name is passed per-call; no JUDGE_NAME global.
+# ---------------------------------------------------------------------------
+OPENROUTER_API_KEY: str = os.environ.get("OPENROUTER_API_KEY", "")
+_OPENROUTER_URL: str = os.environ.get(
+    "OPENROUTER_URL", "https://openrouter.ai/api/v1/chat/completions"
+)
+_LOCAL_JUDGE_URL: str = os.environ.get(
+    "JUDGE_URL", "http://127.0.0.1:8000/v1/chat/completions"
+)
+
 JUDGE_CONCURRENCY = int(os.environ.get("JUDGE_CONCURRENCY", "128"))
 JUDGE_TIMEOUT_S = float(os.environ.get("JUDGE_TIMEOUT_S", "300"))
 JUDGE_ENABLE_THINKING = os.environ.get("JUDGE_ENABLE_THINKING", "0") == "1"
@@ -97,11 +109,27 @@ Use the following format exactly:
 """
 
 
-def make_session() -> aiohttp.ClientSession:
-    """Create an aiohttp session sized for the configured concurrency."""
+def make_session(backend: str = "openrouter") -> aiohttp.ClientSession:
+    """Create an aiohttp session sized for the configured concurrency.
+
+    ``backend="openrouter"`` injects the Authorization + HTTP-Referer
+    headers required by the OpenRouter API; raises ``ValueError`` if
+    ``OPENROUTER_API_KEY`` is not set.  ``backend="local"`` creates a
+    plain session for a local vLLM server.
+    """
+    headers: dict[str, str] = {}
+    if backend == "openrouter":
+        if not OPENROUTER_API_KEY:
+            raise ValueError(
+                "OPENROUTER_API_KEY env var must be set when judge_backend='openrouter'"
+            )
+        headers["Authorization"] = f"Bearer {OPENROUTER_API_KEY}"
+        headers["HTTP-Referer"] = os.environ.get(
+            "OPENROUTER_HTTP_REFERER", "https://github.com/distant-association-2"
+        )
     connector = aiohttp.TCPConnector(limit=JUDGE_CONCURRENCY * 2)
     timeout = aiohttp.ClientTimeout(total=JUDGE_TIMEOUT_S)
-    return aiohttp.ClientSession(connector=connector, timeout=timeout)
+    return aiohttp.ClientSession(connector=connector, timeout=timeout, headers=headers)
 
 
 def build_guess_messages(all_words: Iterable[str], clue: str, max_guesses: int,
@@ -131,13 +159,20 @@ def build_guess_messages(all_words: Iterable[str], clue: str, max_guesses: int,
 
 
 async def judge_guess(session: aiohttp.ClientSession, sem: asyncio.Semaphore,
-                      all_words, clue: str, max_guesses: int) -> str | None:
-    """Call the judge once; return raw completion text or ``None`` on failure."""
+                      all_words, clue: str, max_guesses: int,
+                      model: str, backend: str = "openrouter") -> str | None:
+    """Call the judge once; return raw completion text or ``None`` on failure.
+
+    ``model`` is the model identifier to send in the payload (e.g.
+    ``"openai/gpt-4o"`` for OpenRouter, ``"qwen3-judge"`` for local
+    vLLM).  ``backend`` selects the endpoint URL.
+    """
     if not clue or int(max_guesses) < 1:
         return None
 
+    url = _OPENROUTER_URL if backend == "openrouter" else _LOCAL_JUDGE_URL
     payload = {
-        "model": JUDGE_NAME,
+        "model": model,
         "messages": build_guess_messages(all_words, clue, max_guesses),
         "temperature": JUDGE_TEMPERATURE,
         "max_tokens": JUDGE_MAX_TOKENS,
@@ -148,7 +183,7 @@ async def judge_guess(session: aiohttp.ClientSession, sem: asyncio.Semaphore,
     for attempt in range(3):
         try:
             async with sem:
-                async with session.post(JUDGE_URL, json=payload) as r:
+                async with session.post(url, json=payload) as r:
                     if 400 <= r.status < 500:
                         text = await r.text()
                         logger.warning("Judge 4xx: %s %s", r.status, text[:256])
