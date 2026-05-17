@@ -25,10 +25,21 @@
 set -euo pipefail
 
 # -----------------------------------------------------------------------------
+# Fixed hyperparameters (held constant across runs; do not override via env)
+# -----------------------------------------------------------------------------
+MICRO_BSZ_PER_GPU=1        # micro-batch trajectories per GPU
+N_RESP_PER_PROMPT=32       # rollout group size (responses per prompt)
+TRAIN_PROMPT_BSZ=32        # global prompts per training step
+                           # → 32 * N_RESP_PER_PROMPT = 1024 trajectories/step
+                           # constraint: (TRAIN_PROMPT_BSZ * N_RESP_PER_PROMPT)
+                           #             must be divisible by N_TRAIN_GPUS
+
+# -----------------------------------------------------------------------------
 # 0. Paths
 # -----------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${REPO_ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
+CONFIG_YAML="${SCRIPT_DIR}/codenames_dapo.yaml"
 cd "${REPO_ROOT}"
 
 TRAIN_PARQUET="${TRAIN_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-5/codenames_rlvr_train.parquet}"
@@ -57,7 +68,8 @@ esac
 # -----------------------------------------------------------------------------
 # 1. GPU layout
 # -----------------------------------------------------------------------------
-TOTAL_GPUS="${TOTAL_GPUS:-8}"
+TOTAL_GPUS="$(nvidia-smi -L | wc -l)"
+[ "${TOTAL_GPUS}" -lt 1 ] && { echo "[gpu] no GPUs detected via nvidia-smi -L" >&2; exit 1; }
 ROLLOUT_TP="${ROLLOUT_TP:-2}"
 
 if [ "${USE_LOCAL_JUDGE}" = "1" ]; then
@@ -177,22 +189,26 @@ export NCCL_CUMEM_ENABLE=0
 export NCCL_DEBUG="${NCCL_DEBUG:-WARN}"
 
 # -----------------------------------------------------------------------------
-# 4. Batch sizes  (depend on N_TRAIN_GPUS, computed above)
+# 4. Batch sizes  (TRAIN_PROMPT_BSZ, MICRO_BSZ_PER_GPU, N_RESP_PER_PROMPT
+#                 are fixed at the top of this script)
 # -----------------------------------------------------------------------------
-MICRO_BSZ_PER_GPU="${MICRO_BSZ_PER_GPU:-1}"   # micro-batch trajectories per GPU
-N_RESP_PER_PROMPT="${N_RESP_PER_PROMPT:-8}"   # rollout group size (responses per prompt)
+total_trajectories=$((TRAIN_PROMPT_BSZ * N_RESP_PER_PROMPT))
+if (( total_trajectories % N_TRAIN_GPUS != 0 )); then
+  echo "[batch] ERROR: TRAIN_PROMPT_BSZ * N_RESP_PER_PROMPT (${total_trajectories})" >&2
+  echo "[batch]        is not divisible by N_TRAIN_GPUS (${N_TRAIN_GPUS})." >&2
+  exit 1
+fi
+PPO_MINI_BSZ=${TRAIN_PROMPT_BSZ}
+GEN_PROMPT_BSZ=${TRAIN_PROMPT_BSZ}
+echo "[batch] prompts/step=${TRAIN_PROMPT_BSZ}  trajectories/step=${total_trajectories}  micro/gpu=${MICRO_BSZ_PER_GPU}"
 
-PPO_MINI_BSZ=$((MICRO_BSZ_PER_GPU * N_TRAIN_GPUS * N_RESP_PER_PROMPT))
-TRAIN_PROMPT_BSZ=${PPO_MINI_BSZ}
-GEN_PROMPT_BSZ=${PPO_MINI_BSZ}
-
-# Checkpoint frequency: ~16 saves per run.
-# TOTAL_EPOCHS must match trainer.total_epochs in codenames_dapo.yaml.
-TOTAL_EPOCHS=4
+# Checkpoint frequency: ~16 saves per run. Read epoch count from yaml so the
+# two sources of truth stay in sync.
+TOTAL_EPOCHS=$(python3 -c "import yaml; print(yaml.safe_load(open('${CONFIG_YAML}'))['trainer']['total_epochs'])")
 dataset_rows=$(python3 -c "import pyarrow.parquet as pq; print(pq.read_metadata('${TRAIN_PARQUET}').num_rows)")
 total_steps=$(( (dataset_rows * TOTAL_EPOCHS + GEN_PROMPT_BSZ - 1) / GEN_PROMPT_BSZ ))
 save_freq=$(( total_steps / 16 )); [ "${save_freq}" -lt 1 ] && save_freq=1
-echo "[ckpt] rows=${dataset_rows}  steps≈${total_steps}  save_freq=${save_freq}"
+echo "[ckpt] epochs=${TOTAL_EPOCHS}  rows=${dataset_rows}  steps≈${total_steps}  save_freq=${save_freq}"
 
 EXP_NAME="${EXP_NAME_PREFIX:-codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")}-$(date +%Y%m%d-%H%M%S)"
 
