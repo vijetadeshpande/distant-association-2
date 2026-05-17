@@ -25,9 +25,23 @@
 set -euo pipefail
 
 # -----------------------------------------------------------------------------
+# Debug mode: smoke-test the full pipeline on a tiny slice of the data.
+#   - subsamples TRAIN_PROMPT_BSZ rows from the training parquet
+#   - forces total_epochs=1, save_freq=1, val_before_train=True
+#   - dumps rollout + validation generations to ${REPO_ROOT}/debug_dumps/<run>
+#   - disables algorithm.filter_groups (oversampling would loop over the slice)
+# Enable with `DEBUG=1` env var or `debug` / `--debug` as the first script arg.
+# -----------------------------------------------------------------------------
+DEBUG="${DEBUG:-0}"
+if [ "${1:-}" = "debug" ] || [ "${1:-}" = "--debug" ]; then
+  DEBUG=1
+  shift
+fi
+
+# -----------------------------------------------------------------------------
 # Fixed hyperparameters (held constant across runs; do not override via env)
 # -----------------------------------------------------------------------------
-MICRO_BSZ_PER_GPU=1        # micro-batch trajectories per GPU
+MICRO_BSZ_PER_GPU=4        # micro-batch trajectories per GPU
 N_RESP_PER_PROMPT=32       # rollout group size (responses per prompt)
 TRAIN_PROMPT_BSZ=32        # global prompts per training step
                            # → 32 * N_RESP_PER_PROMPT = 1024 trajectories/step
@@ -45,6 +59,19 @@ cd "${REPO_ROOT}"
 TRAIN_PARQUET="${TRAIN_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-5/codenames_rlvr_train.parquet}"
 VAL_PARQUET="${VAL_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-5/codenames_rlvr_val.parquet}"
 REWARD_FN_PATH="${REPO_ROOT}/custom_reward_functions/codenames_reward.py"
+
+# Debug: subsample training parquet to TRAIN_PROMPT_BSZ rows.
+if [ "${DEBUG}" = "1" ]; then
+  DEBUG_TRAIN_PARQUET="${DEBUG_TRAIN_PARQUET:-/tmp/codenames_debug_train.parquet}"
+  echo "[debug] subsampling ${TRAIN_PROMPT_BSZ} rows from ${TRAIN_PARQUET}"
+  python3 -c "
+import pyarrow.parquet as pq
+t = pq.read_table('${TRAIN_PARQUET}').slice(0, ${TRAIN_PROMPT_BSZ})
+pq.write_table(t, '${DEBUG_TRAIN_PARQUET}')
+print(f'[debug] wrote {t.num_rows} rows -> ${DEBUG_TRAIN_PARQUET}')
+"
+  TRAIN_PARQUET="${DEBUG_TRAIN_PARQUET}"
+fi
 
 TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-8B}"
 TRAINEE_MODEL_PATH="${TRAINEE_MODEL_PATH:-${TRAINEE_MODEL_ID}}"
@@ -205,12 +232,46 @@ echo "[batch] prompts/step=${TRAIN_PROMPT_BSZ}  trajectories/step=${total_trajec
 # Checkpoint frequency: ~16 saves per run. Read epoch count from yaml so the
 # two sources of truth stay in sync.
 TOTAL_EPOCHS=$(python3 -c "import yaml; print(yaml.safe_load(open('${CONFIG_YAML}'))['trainer']['total_epochs'])")
+[ "${DEBUG}" = "1" ] && TOTAL_EPOCHS=1
 dataset_rows=$(python3 -c "import pyarrow.parquet as pq; print(pq.read_metadata('${TRAIN_PARQUET}').num_rows)")
 total_steps=$(( (dataset_rows * TOTAL_EPOCHS + GEN_PROMPT_BSZ - 1) / GEN_PROMPT_BSZ ))
 save_freq=$(( total_steps / 16 )); [ "${save_freq}" -lt 1 ] && save_freq=1
 echo "[ckpt] epochs=${TOTAL_EPOCHS}  rows=${dataset_rows}  steps≈${total_steps}  save_freq=${save_freq}"
 
 EXP_NAME="${EXP_NAME_PREFIX:-codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")}-$(date +%Y%m%d-%H%M%S)"
+[ "${DEBUG}" = "1" ] && EXP_NAME="debug-${EXP_NAME}"
+
+# -----------------------------------------------------------------------------
+# Debug overrides: force a single training step, run validation, dump both.
+# filter_groups is disabled because oversampling would re-iterate the slice.
+# -----------------------------------------------------------------------------
+debug_overrides=()
+if [ "${DEBUG}" = "1" ]; then
+  DEBUG_DUMP_DIR="${REPO_ROOT}/debug_dumps/${EXP_NAME}"
+  mkdir -p "${DEBUG_DUMP_DIR}/rollout" "${DEBUG_DUMP_DIR}/validation"
+  echo "[debug] dump dir=${DEBUG_DUMP_DIR}"
+
+  # Val set = last N_TRAIN_GPUS rows of the original val parquet (one per GPU).
+  DEBUG_VAL_PARQUET="${DEBUG_VAL_PARQUET:-/tmp/codenames_debug_val.parquet}"
+  echo "[debug] taking last ${N_TRAIN_GPUS} rows from ${VAL_PARQUET}"
+  python3 -c "
+import pyarrow.parquet as pq
+t = pq.read_table('${VAL_PARQUET}')
+t = t.slice(max(t.num_rows - ${N_TRAIN_GPUS}, 0), ${N_TRAIN_GPUS})
+pq.write_table(t, '${DEBUG_VAL_PARQUET}')
+print(f'[debug] wrote {t.num_rows} rows -> ${DEBUG_VAL_PARQUET}')
+"
+  VAL_PARQUET="${DEBUG_VAL_PARQUET}"
+  debug_overrides+=(
+    "trainer.total_epochs=1"
+    "trainer.val_before_train=True"
+    "trainer.test_freq=1"
+    "trainer.rollout_data_dir=${DEBUG_DUMP_DIR}/rollout"
+    "trainer.validation_data_dir=${DEBUG_DUMP_DIR}/validation"
+    "trainer.log_val_generations=8"
+    "algorithm.filter_groups.enable=False"
+  )
+fi
 
 # -----------------------------------------------------------------------------
 # 5. Judge reward kwargs  (empty array = cosine mode, no overrides needed)
@@ -256,6 +317,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=${MICRO_BSZ_PER_GPU} \
     reward.custom_reward_function.path="${REWARD_FN_PATH}" \
     "${judge_overrides[@]}" \
+    "${debug_overrides[@]}" \
     trainer.n_gpus_per_node=${N_TRAIN_GPUS} \
     trainer.experiment_name="${EXP_NAME}" \
     trainer.save_freq=${save_freq} \
