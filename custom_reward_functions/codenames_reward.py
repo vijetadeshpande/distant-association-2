@@ -280,6 +280,10 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
     parse_fail = int(not pc.tags_present)
 
     # -- 3. short-circuit on clue-format failure --------------------------
+    # Judge inference is gated here: if the clue can't be parsed/extracted
+    # cleanly (missing tags, multi-word clue, off-board target, morphology
+    # variant, etc.) we return before the judge call. The judge is invoked
+    # ONLY when the trainee's clue passed every format check above.
     if not format_ok:
         if cosine_mode:
             # Cosine mode: only cosine_sim/oov are meaningful; trainee
@@ -463,14 +467,22 @@ async def _compute_score_guess(solution_str: str, extra_info: dict) -> dict:
 def _route_task(extra_info: dict) -> str:
     """Return ``"guess"`` or ``"clue"`` based on ``extra_info["task"]``.
 
-    Matches on substring so both ``codenames_clue_generation`` and a
-    bare ``clue`` route correctly. Defaults to clue if the field is
-    missing or unrecognized.
+    Judge inference is reserved for the clue task ONLY, so routing is
+    deliberately strict: an unknown or missing ``task`` field falls
+    through to the guess path (rule-based, no judge call) rather than
+    silently billing the judge on something that isn't a clue task.
     """
     raw = str(extra_info.get("task", "")).lower()
+    if "clue" in raw:
+        return "clue"
     if "guess" in raw:
         return "guess"
-    return "clue"
+    logger.warning(
+        "compute_score: unrecognized task=%r; defaulting to guess path "
+        "(no judge call) to avoid spurious judge inference.",
+        extra_info.get("task"),
+    )
+    return "guess"
 
 
 async def compute_score(data_source, solution_str, ground_truth,

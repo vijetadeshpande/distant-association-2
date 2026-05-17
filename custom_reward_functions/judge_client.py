@@ -7,12 +7,11 @@ launch command and GPU layout.
 
 Design choices
 --------------
-* **No SYS_PROMPT by default.**  We want the judge to generate as little
-  as possible per call.  The Qwen3-Instruct-2507 checkpoint is
-  non-thinking by design, so the user turn carrying the Guess-Generator
-  instruction is sufficient.  Set ``JUDGE_ENABLE_THINKING=1`` to
-  restore the five-section CoT wrapper if stronger reasoning is ever
-  needed.
+* **Thinking is always off.**  The judge should respond directly with
+  the guess block (a short pretext is fine, but no CoT scaffold).  We
+  send no system prompt and do not expose a knob to enable thinking —
+  Codenames training relies on the judge being a cheap, fast scorer,
+  not a reasoner.
 * **Single shared ClientSession per reward batch** — see
   ``make_session`` below.  The VeRL 0.7.1 experimental reward-loop
   already fans out ``run_single`` via ``asyncio.gather``, so the only
@@ -53,10 +52,7 @@ _LOCAL_JUDGE_URL: str = os.environ.get(
 
 JUDGE_CONCURRENCY = int(os.environ.get("JUDGE_CONCURRENCY", "128"))
 JUDGE_TIMEOUT_S = float(os.environ.get("JUDGE_TIMEOUT_S", "300"))
-JUDGE_ENABLE_THINKING = os.environ.get("JUDGE_ENABLE_THINKING", "0") == "1"
-JUDGE_MAX_TOKENS = int(os.environ.get(
-    "JUDGE_MAX_TOKENS", "2048" if JUDGE_ENABLE_THINKING else "256"
-))
+JUDGE_MAX_TOKENS = int(os.environ.get("JUDGE_MAX_TOKENS", "1024"))
 JUDGE_TEMPERATURE = float(os.environ.get("JUDGE_TEMPERATURE", "0.0"))
 
 # Minimal Guess-Generator prompt — mirrors CODENAMES_GUESS_GEN_INSTRUCTION
@@ -91,23 +87,6 @@ Here are the word sets:
 [Clue]: {clue}
 [Max-Guesses]: {max_guesses}
 """
-
-# Imported lazily / kept inlined so we don't force every judge call to
-# import the dataset-prep module.  Must match SYS_PROMPT in
-# custom_data_preparation/system_prompts.py.
-_SYS_PROMPT_THINKING = """\
-You are an AI assistant that uses a structured Chain of Thought (CoT) approach to answer queries accurately and concisely.
-Follow these steps in order:
-1. Think   2. Reason   3. Reflect   4. Adjust   5. Output
-
-Use the following format exactly:
-<thinking>...</thinking>
-<reasoning>...</reasoning>
-<reflection>...</reflection>
-<adjustment>...</adjustment>
-<output>...</output>
-"""
-
 
 def make_session(backend: str = "openrouter") -> aiohttp.ClientSession:
     """Create an aiohttp session sized for the configured concurrency.
@@ -151,11 +130,8 @@ def build_guess_messages(all_words: Iterable[str], clue: str, max_guesses: int,
         all_words=shuffled, clue=clue, max_guesses=int(max_guesses)
     )
 
-    messages = []
-    if JUDGE_ENABLE_THINKING:
-        messages.append({"role": "system", "content": _SYS_PROMPT_THINKING})
-    messages.append({"role": "user", "content": user_content})
-    return messages
+    # Thinking is hardcoded off — no system prompt, single user turn.
+    return [{"role": "user", "content": user_content}]
 
 
 async def judge_guess(session: aiohttp.ClientSession, sem: asyncio.Semaphore,

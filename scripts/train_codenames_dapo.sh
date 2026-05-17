@@ -218,9 +218,9 @@ EXP_NAME="${EXP_NAME_PREFIX:-codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")}
 judge_overrides=()
 if [ "${USE_JUDGE}" = "1" ]; then
   # Tune these for OpenRouter rate limits or local GPU capacity.
+  # Judge thinking is always off — see custom_reward_functions/judge_client.py.
   export JUDGE_CONCURRENCY="${JUDGE_CONCURRENCY:-128}"
-  export JUDGE_ENABLE_THINKING="${JUDGE_ENABLE_THINKING:-0}"
-  export JUDGE_MAX_TOKENS="${JUDGE_MAX_TOKENS:-256}"
+  export JUDGE_MAX_TOKENS="${JUDGE_MAX_TOKENS:-1024}"
   export JUDGE_TEMPERATURE="${JUDGE_TEMPERATURE:-0.0}"
 
   # Model name sent in the API payload differs by backend:
