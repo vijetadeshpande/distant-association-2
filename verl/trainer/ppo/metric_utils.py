@@ -248,32 +248,88 @@ def compute_data_metrics(batch: DataProto, use_critic: bool = True) -> dict[str,
         metrics[f"reward/{_k}/max"] = float(np.max(_arr))
         metrics[f"reward/{_k}/min"] = float(np.min(_arr))
 
-    # Per-sample text fields as a wandb.Table (N sample rows per step).
-    _text_keys = [k for k in ("clue", "selected_targets", "judge_guesses") if k in _text_values]
-    if _text_keys:
+    # Per-task subsampled wandb.Tables for spot-checking rollouts.
+    # Two tables (clue / guess) so each can carry task-specific columns:
+    #   reward/clue_samples  — target_words, non_target_words, clue,
+    #                          judge_guesses, format_score, task_score
+    #   reward/guess_samples — target_words, non_target_words, clue (ref),
+    #                          max_num_guesses, trainee_guesses,
+    #                          format_score, task_score
+    # Each table samples up to 5 rows per step from the matching subset.
+    _task_kind_arr = _text_values.get("task_kind")
+    if _task_kind_arr is not None:
         try:
             import wandb  # type: ignore
         except ImportError:
             wandb = None  # type: ignore
         if wandb is not None:
-            _score = _nt.get("score")
-            _score_arr = None
-            if _score is not None:
+            def _numeric_arr(key):
+                v = _nt.get(key)
+                if v is None:
+                    return None
                 try:
-                    _score_arr = np.asarray(_score, dtype=np.float32)
+                    return np.asarray(v, dtype=np.float32)
                 except (TypeError, ValueError):
-                    _score_arr = None
-            _cols = ["sample_idx", *_text_keys]
-            if _score_arr is not None:
-                _cols.append("score")
-            _tbl = wandb.Table(columns=_cols)
-            _n_rows = min(8, len(_text_values[_text_keys[0]]))
-            for _i in range(_n_rows):
-                _row = [_i] + [str(_text_values[k][_i]) for k in _text_keys]
-                if _score_arr is not None:
-                    _row.append(float(_score_arr[_i]))
-                _tbl.add_data(*_row)
-            metrics["reward/samples"] = _tbl
+                    return None
+
+            def _text_arr(key):
+                return _text_values.get(key)
+
+            def _build_task_table(kind: str, columns_spec, max_rows: int = 5):
+                """columns_spec: list of (display_name, source_kind, source_key).
+                source_kind ∈ {"text","num","idx"}.
+                """
+                mask = np.array([str(t) == kind for t in _task_kind_arr])
+                indices = np.where(mask)[0]
+                if indices.size == 0:
+                    return None
+                rng = np.random.default_rng()
+                pick = rng.choice(indices, size=min(max_rows, indices.size), replace=False)
+                tbl = wandb.Table(columns=[c[0] for c in columns_spec])
+                for i in pick:
+                    row = []
+                    for _disp, kind_, key_ in columns_spec:
+                        if kind_ == "idx":
+                            row.append(int(i))
+                        elif kind_ == "num":
+                            arr = _numeric_arr(key_)
+                            row.append(float(arr[i]) if arr is not None else 0.0)
+                        else:  # text
+                            arr = _text_arr(key_)
+                            row.append(str(arr[i]) if arr is not None else "")
+                    tbl.add_data(*row)
+                return tbl
+
+            clue_tbl = _build_task_table(
+                "clue",
+                [
+                    ("sample_idx",       "idx",  None),
+                    ("target_words",     "text", "target_words_str"),
+                    ("non_target_words", "text", "non_target_words_str"),
+                    ("clue",             "text", "clue"),
+                    ("judge_guesses",    "text", "judge_guesses"),
+                    ("format_score",     "num",  "format_score"),
+                    ("task_score",       "num",  "task_score"),
+                ],
+            )
+            if clue_tbl is not None:
+                metrics["reward/clue_samples"] = clue_tbl
+
+            guess_tbl = _build_task_table(
+                "guess",
+                [
+                    ("sample_idx",       "idx",  None),
+                    ("target_words",     "text", "target_words_str"),
+                    ("non_target_words", "text", "non_target_words_str"),
+                    ("clue",             "text", "reference_clue"),
+                    ("max_num_guesses",  "num",  "max_num_guesses"),
+                    ("trainee_guesses",  "text", "trainee_guesses"),
+                    ("format_score",     "num",  "format_score"),
+                    ("task_score",       "num",  "task_score"),
+                ],
+            )
+            if guess_tbl is not None:
+                metrics["reward/guess_samples"] = guess_tbl
 
     return metrics
 
