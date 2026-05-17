@@ -56,6 +56,13 @@ REPO_ROOT="${REPO_ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 CONFIG_YAML="${SCRIPT_DIR}/codenames_dapo.yaml"
 cd "${REPO_ROOT}"
 
+# Auto-load .env (secrets like OPENROUTER_API_KEY). Gitignored.
+# `set -a` exports every var assigned while sourced; restore the prior
+# allexport state afterward so we don't leak it to the rest of the script.
+if [ -f "${REPO_ROOT}/.env" ]; then
+  set -a; . "${REPO_ROOT}/.env"; set +a
+fi
+
 TRAIN_PARQUET="${TRAIN_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-5/codenames_rlvr_train.parquet}"
 VAL_PARQUET="${VAL_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-5/codenames_rlvr_val.parquet}"
 REWARD_FN_PATH="${REPO_ROOT}/custom_reward_functions/codenames_reward.py"
@@ -292,8 +299,14 @@ if [ "${USE_JUDGE}" = "1" ]; then
   else
     JUDGE_PAYLOAD_MODEL="${JUDGE_MODEL_ID}"
   fi
-  judge_overrides+=("+reward.reward_kwargs.judge_model=${JUDGE_PAYLOAD_MODEL}")
-  judge_overrides+=("+reward.reward_kwargs.judge_backend=${JUDGE_BACKEND}")
+  # NOTE: these MUST go under reward.custom_reward_function.reward_kwargs,
+  # not reward.reward_kwargs. VeRL routes the former into compute_score's
+  # kwargs (see verl/trainer/ppo/reward.py:get_custom_reward_fn), while
+  # the latter is consumed by the reward MANAGER's constructor. Putting
+  # judge_model there leaves compute_score with judge_model=None, which
+  # silently falls back to cosine mode and tries to load the GloVe table.
+  judge_overrides+=("+reward.custom_reward_function.reward_kwargs.judge_model=${JUDGE_PAYLOAD_MODEL}")
+  judge_overrides+=("+reward.custom_reward_function.reward_kwargs.judge_backend=${JUDGE_BACKEND}")
 fi
 
 # -----------------------------------------------------------------------------
