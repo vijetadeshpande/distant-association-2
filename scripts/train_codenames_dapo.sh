@@ -46,11 +46,11 @@ TRAIN_PARQUET="${TRAIN_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/versio
 VAL_PARQUET="${VAL_PARQUET:-${REPO_ROOT}/custom_data/training_prompts/version-5/codenames_rlvr_val.parquet}"
 REWARD_FN_PATH="${REPO_ROOT}/custom_reward_functions/codenames_reward.py"
 
-TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-1.7B}"
+TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-8B}"
 TRAINEE_MODEL_PATH="${TRAINEE_MODEL_PATH:-${TRAINEE_MODEL_ID}}"
 
 # Judge settings
-JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-}"          # empty = cosine mode
+JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-google/gemini-2.5-flash-lite}"          # empty = cosine mode
 JUDGE_BACKEND="${JUDGE_BACKEND:-openrouter}"  # "openrouter" or "local"
 JUDGE_PORT="${JUDGE_PORT:-8000}"
 JUDGE_HOST="${JUDGE_HOST:-127.0.0.1}"
