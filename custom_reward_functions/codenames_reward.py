@@ -80,21 +80,49 @@ def _as_list(value: Any) -> list:
     return list(value)
 
 
-# Union of every format key produced by either task path. The return
-# dict must contain all of these so VeRL sees a homogeneous schema.
+# Union of every format key produced by any scenario. The return dict
+# must contain all of these so VeRL sees a homogeneous schema. The
+# ``guess_*`` block is the trainee's (scenario a), while
+# ``judge_guess_*`` is the judge's diagnostic block in the clue task
+# judge mode (scenario b) — kept distinct so wandb doesn't blend them.
 _ALL_FORMAT_KEYS: tuple[str, ...] = (
+    # thinking (both paths)
     "thinking_all_present",
     "thinking_in_order",
+    # clue format (trainee, clue task)
     "clue_tags_present",
     "clue_single_word",
     "clue_no_hyphen",
     "clue_selected_nonempty",
     "clue_selected_subset",
     "clue_no_morph_variant",
+    # guess format (trainee, guess task)
     "guess_tags_present",
     "guess_nonempty",
     "guess_all_in_board",
     "guess_count_ok",
+    # guess format (judge, clue task in judge mode — diagnostic only)
+    "judge_guess_tags_present",
+    "judge_guess_nonempty",
+    "judge_guess_all_in_board",
+    "judge_guess_count_ok",
+)
+
+
+# Union of every task-reward key produced by any scenario. Padded with
+# 0.0 in _build_return so wandb keeps trainee-side (``pos_correct`` etc.)
+# and judge-side (``judge_pos_correct`` etc.) histograms separate.
+_ALL_TASK_KEYS: tuple[str, ...] = (
+    # trainee guess task (scenario a)
+    "pos_correct",
+    "neg_nontarget",
+    "neg_invalid",
+    "task",
+    # judge guesses scored under the clue task (scenario b)
+    "judge_pos_correct",
+    "judge_neg_nontarget",
+    "judge_neg_invalid",
+    "judge_task",
 )
 
 
@@ -107,14 +135,14 @@ _GATE_EXCLUDED_FMT_KEYS: frozenset[str] = frozenset({
 })
 
 
-def _aggregate(fmt_scores: dict, task_scores: dict) -> float:
+def _aggregate(fmt_scores: dict, task_scalar: float) -> float:
     """Hard-gate format, then pass through the task scalar.
 
     If any non-excluded format sub-reward is negative, return its
     minimum (always -1.0 since format scores are drawn from
-    ``{-1.0, 0.0}``). Otherwise return the composite ``task`` value
-    untouched — cosine_sim in cosine mode, ``pos_correct -
-    neg_nontarget - neg_invalid`` in judge/guess mode. No averaging.
+    ``{-1.0, 0.0}``). Otherwise return ``task_scalar`` untouched —
+    cosine_sim in cosine mode, ``pos_correct - neg_nontarget -
+    neg_invalid`` in judge/guess mode. No averaging.
 
     Thinking-format keys are excluded from the gate but still logged.
     """
@@ -124,13 +152,51 @@ def _aggregate(fmt_scores: dict, task_scores: dict) -> float:
     ]
     if fmt_values and any(v < 0.0 for v in fmt_values):
         return min(fmt_values)
-    return float(task_scores.get("task", 0.0))
+    return float(task_scalar)
+
+
+def _rebadge_judge_diag(diag: dict[str, Any]) -> dict[str, Any]:
+    """Rename guess-format diagnostic keys to the ``judge_`` namespace.
+
+    The clue task in judge mode parses the JUDGE's guess block to
+    diagnose how well-formed the judge's response was — these are not
+    trainee-controllable and must not collide with the trainee's own
+    ``guess_*`` keys (scenario a).
+    """
+    return {f"judge_{k}": v for k, v in diag.items()}
+
+
+def _rebadge_judge_task(task: dict[str, Any]) -> dict[str, Any]:
+    """Rename the task-reward keys to the ``judge_`` namespace.
+
+    In the clue task judge mode, ``task_reward(...)`` scores the
+    JUDGE's guesses against the trainee's board. We keep these in a
+    distinct key namespace so wandb shows judge-side and trainee-side
+    distributions separately.
+    """
+    return {
+        "judge_pos_correct":   task["pos_correct"],
+        "judge_neg_nontarget": task["neg_nontarget"],
+        "judge_neg_invalid":   task["neg_invalid"],
+        "judge_task":          task["task"],
+    }
+
+
+def _zero_judge_task() -> dict[str, Any]:
+    """Zero-filled judge-side task dict (used on judge-fail / short-circuit)."""
+    return {
+        "judge_pos_correct": 0.0,
+        "judge_neg_nontarget": 0.0,
+        "judge_neg_invalid": 0.0,
+        "judge_task": 0.0,
+    }
 
 
 def _build_return(
     *,
     fmt: dict,
     task: dict,
+    task_scalar: float,
     parse_fail: int,
     format_fail: int,
     judge_fail: int,
@@ -143,25 +209,30 @@ def _build_return(
     """Build a return dict whose key set is identical in every code path.
 
     ``fmt`` carries only the format keys the per-task path actually
-    scored — the missing keys are padded with 0.0 (passing) here.
-    ``guess_diag`` is an OPTIONAL judge-side diagnostic dict used by
-    the clue task in judge mode; when present it overrides the
-    ``guess_*`` slots so they reflect the judge's output rather than
-    the trainee's.  In the guess task, ``guess_diag`` is None — the
-    ``guess_*`` slots already hold the trainee's format scores via
-    ``fmt``.
+    scored; ``task`` carries only the task-reward keys for the active
+    scenario. Both are zero-padded against ``_ALL_FORMAT_KEYS`` and
+    ``_ALL_TASK_KEYS`` so wandb sees a stable schema and never blends
+    trainee-side (scenario a) with judge-side (scenario b) values.
+
+    ``guess_diag`` is the judge-side guess-format diagnostic in clue
+    task judge mode (already rebadged into the ``judge_guess_*``
+    namespace by the caller); it's merged into padded_fmt and only
+    overrides ``judge_guess_*`` slots, never trainee ``guess_*`` ones.
     """
     padded_fmt = {k: 0.0 for k in _ALL_FORMAT_KEYS}
     padded_fmt.update(fmt)
     if guess_diag is not None:
         padded_fmt.update(guess_diag)
 
+    padded_task = {k: 0.0 for k in _ALL_TASK_KEYS}
+    padded_task.update(task)
+
     cosine = cosine_diag if cosine_diag is not None else {"cosine_sim": 0.0, "oov": 0}
 
     out: dict[str, Any] = {
-        "score": _aggregate(fmt, task),
+        "score": _aggregate(fmt, task_scalar),
         **padded_fmt,
-        **task,
+        **padded_task,
         **cosine,
         "parse_fail": int(parse_fail),
         "format_fail": int(format_fail),
@@ -211,14 +282,20 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
     # -- 3. short-circuit on clue-format failure --------------------------
     if not format_ok:
         if cosine_mode:
-            task = zero_cosine_reward()
-            cosine_diag = {"cosine_sim": task["cosine_sim"], "oov": task["oov"]}
+            # Cosine mode: only cosine_sim/oov are meaningful; trainee
+            # and judge task slots stay zero-padded by _build_return.
+            task: dict = {}
+            cosine_diag = {"cosine_sim": 0.0, "oov": 0}
         else:
-            task = zero_task_reward()
+            # Judge mode: zero the judge-side task slots explicitly so
+            # they record a sample of the format-failed batch rather
+            # than being indistinguishable from "scenario not active".
+            task = _zero_judge_task()
             cosine_diag = None
         return _build_return(
             fmt=fmt,
-            task={k: v for k, v in task.items() if k not in ("cosine_sim", "oov")},
+            task=task,
+            task_scalar=0.0,  # ignored by aggregator — fmt gate fires
             parse_fail=parse_fail,
             format_fail=1,
             judge_fail=0,
@@ -236,11 +313,14 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
                 "Cosine mode: extra_info['clue'] is missing/empty for this sample; "
                 "returning cosine_sim=0."
             )
-        task = cosine_reward(pc.clue, target_clue)
-        cosine_diag = {"cosine_sim": task["cosine_sim"], "oov": task["oov"]}
+        cos = cosine_reward(pc.clue, target_clue)
+        cosine_diag = {"cosine_sim": cos["cosine_sim"], "oov": cos["oov"]}
+        # cosine mode publishes only cosine_sim/oov as its task signal;
+        # the trainee/judge task slots stay zero-padded.
         return _build_return(
             fmt=fmt,
-            task={k: v for k, v in task.items() if k not in ("cosine_sim", "oov")},
+            task={},
+            task_scalar=cos["cosine_sim"],
             parse_fail=parse_fail,
             format_fail=0,
             judge_fail=0,
@@ -271,10 +351,10 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
         judge_text = None
 
     if not judge_text:
-        task = zero_task_reward()
         return _build_return(
             fmt=fmt,
-            task=task,
+            task=_zero_judge_task(),
+            task_scalar=0.0,
             parse_fail=parse_fail,
             format_fail=0,
             judge_fail=1,
@@ -286,19 +366,22 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
         )
 
     pg = parse_guesses(judge_text)
-    # Judge-side format is logged for diagnostics but does NOT feed into
-    # the trainee's reward — the trainee cannot control the judge.
-    guess_diag = guess_format_scores(pg, all_words)
+    # Judge-side format & task scores are rebadged into the ``judge_``
+    # namespace so wandb keeps them separate from the trainee's own
+    # guess-task metrics (scenario a). The trainee can't control the
+    # judge, so these diagnostics never feed the format gate either.
+    judge_guess_diag = _rebadge_judge_diag(guess_format_scores(pg, all_words))
 
-    task = task_reward(pg.guesses, target_set, non_target_set)
+    raw_task = task_reward(pg.guesses, target_set, non_target_set)
     return _build_return(
         fmt=fmt,
-        task=task,
+        task=_rebadge_judge_task(raw_task),
+        task_scalar=raw_task["task"],
         parse_fail=parse_fail,
         format_fail=0,
         judge_fail=0,
         judge_guesses=",".join(pg.guesses),
-        guess_diag=guess_diag,
+        guess_diag=judge_guess_diag,
         cosine_diag=None,
         clue=pc.clue,
         selected_targets=pc.selected_targets,
@@ -342,10 +425,10 @@ async def _compute_score_guess(solution_str: str, extra_info: dict) -> dict:
 
     # -- 3. short-circuit on guess-format failure -------------------------
     if not format_ok:
-        task = zero_task_reward()
         return _build_return(
             fmt=fmt,
-            task=task,
+            task=zero_task_reward(),
+            task_scalar=0.0,  # ignored by aggregator — fmt gate fires
             parse_fail=parse_fail,
             format_fail=1,
             judge_fail=0,
@@ -361,6 +444,7 @@ async def _compute_score_guess(solution_str: str, extra_info: dict) -> dict:
     return _build_return(
         fmt=fmt,
         task=task,
+        task_scalar=task["task"],
         parse_fail=parse_fail,
         format_fail=0,
         judge_fail=0,
