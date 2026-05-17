@@ -192,6 +192,16 @@ def _zero_judge_task() -> dict[str, Any]:
     }
 
 
+def _format_score_of(fmt: dict) -> float:
+    """Return the gate-relevant format score: ``min(fmt)`` if any failed, else 0.
+
+    Mirrors the gate logic in :func:`_aggregate` so wandb tables can
+    surface the format penalty independently of the final ``score``.
+    """
+    vals = [float(v) for k, v in fmt.items() if k not in _GATE_EXCLUDED_FMT_KEYS]
+    return min(vals) if vals and any(v < 0.0 for v in vals) else 0.0
+
+
 def _build_return(
     *,
     fmt: dict,
@@ -205,6 +215,13 @@ def _build_return(
     cosine_diag: dict[str, Any] | None,
     clue: str,
     selected_targets: list[str],
+    # ---- Per-row context surfaced for wandb tables (no effect on score) ----
+    task_kind: str = "",
+    target_words: list[str] | None = None,
+    non_target_words: list[str] | None = None,
+    reference_clue: str = "",
+    max_num_guesses: int = 0,
+    trainee_guesses: str = "",
 ) -> dict[str, Any]:
     """Build a return dict whose key set is identical in every code path.
 
@@ -218,6 +235,11 @@ def _build_return(
     task judge mode (already rebadged into the ``judge_guess_*``
     namespace by the caller); it's merged into padded_fmt and only
     overrides ``judge_guess_*`` slots, never trainee ``guess_*`` ones.
+
+    The trailing ``task_kind`` … ``trainee_guesses`` fields are pure
+    pass-through context for the per-task wandb tables built in
+    ``verl/trainer/ppo/metric_utils.py``; they do not affect the
+    optimization scalar.
     """
     padded_fmt = {k: 0.0 for k in _ALL_FORMAT_KEYS}
     padded_fmt.update(fmt)
@@ -240,6 +262,15 @@ def _build_return(
         "judge_guesses": judge_guesses,
         "clue": clue,
         "selected_targets": ",".join(selected_targets),
+        # ---- Table context ----
+        "task_kind": task_kind,
+        "target_words_str": ",".join(target_words or []),
+        "non_target_words_str": ",".join(non_target_words or []),
+        "reference_clue": reference_clue,
+        "max_num_guesses": int(max_num_guesses),
+        "trainee_guesses": trainee_guesses,
+        "format_score": _format_score_of(fmt),
+        "task_score": float(task_scalar),
     }
     return out
 
@@ -270,6 +301,16 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
     # -- 1. parse rollout --------------------------------------------------
     pt = parse_thinking(solution_str)
     pc = parse_clue(solution_str)
+
+    # Context fields surfaced for the per-task wandb table; pure pass-through.
+    ctx = dict(
+        task_kind="clue",
+        target_words=target_set,
+        non_target_words=non_target_set,
+        reference_clue=target_clue,
+        max_num_guesses=len(pc.selected_targets),
+        trainee_guesses="",
+    )
 
     # -- 2. format scores --------------------------------------------------
     fmt = {}
@@ -308,6 +349,7 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
             cosine_diag=cosine_diag,
             clue=pc.clue,
             selected_targets=pc.selected_targets,
+            **ctx,
         )
 
     # -- 4. task reward ----------------------------------------------------
@@ -333,6 +375,7 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
             cosine_diag=cosine_diag,
             clue=pc.clue,
             selected_targets=pc.selected_targets,
+            **ctx,
         )
 
     # -- 4 (judge mode). judge inference ----------------------------------
@@ -367,6 +410,7 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
             cosine_diag=None,
             clue=pc.clue,
             selected_targets=pc.selected_targets,
+            **ctx,
         )
 
     pg = parse_guesses(judge_text)
@@ -389,6 +433,7 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
         cosine_diag=None,
         clue=pc.clue,
         selected_targets=pc.selected_targets,
+        **ctx,
     )
 
 
@@ -414,10 +459,24 @@ async def _compute_score_guess(solution_str: str, extra_info: dict) -> dict:
 
     reference_clue = str(extra_info.get("clue", "") or "")
     max_guesses_raw = extra_info.get("num_max_guesses", extra_info.get("max_guesses"))
+    try:
+        max_guesses_int = int(max_guesses_raw) if max_guesses_raw is not None else 0
+    except (TypeError, ValueError):
+        max_guesses_int = 0
 
     # -- 1. parse rollout --------------------------------------------------
     pt = parse_thinking(solution_str)
     pg = parse_guesses(solution_str)
+
+    # Context fields surfaced for the per-task wandb table; pure pass-through.
+    ctx = dict(
+        task_kind="guess",
+        target_words=target_set,
+        non_target_words=non_target_set,
+        reference_clue=reference_clue,
+        max_num_guesses=max_guesses_int,
+        trainee_guesses=",".join(pg.guesses),
+    )
 
     # -- 2. format scores --------------------------------------------------
     fmt = {}
@@ -441,6 +500,7 @@ async def _compute_score_guess(solution_str: str, extra_info: dict) -> dict:
             cosine_diag=None,
             clue=reference_clue,
             selected_targets=[],
+            **ctx,
         )
 
     # -- 4. task reward (rule-based; no judge) ----------------------------
@@ -457,6 +517,7 @@ async def _compute_score_guess(solution_str: str, extra_info: dict) -> dict:
         cosine_diag=None,
         clue=reference_clue,
         selected_targets=[],
+        **ctx,
     )
 
 
