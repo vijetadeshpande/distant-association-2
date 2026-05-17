@@ -1518,11 +1518,12 @@ class RayPPOTrainer:
                         # 2. It's the last training step.
                         # 3. The current step number is a multiple of the save frequency.
                         # 4. The ESI(Elastic Server Instance)/training plan is close to expiration.
-                        if self.config.trainer.save_freq > 0 and (
+                        saved_this_step = self.config.trainer.save_freq > 0 and (
                             is_last_step
                             or self.global_steps % self.config.trainer.save_freq == 0
                             or esi_close_to_expiration
-                        ):
+                        )
+                        if saved_this_step:
                             if esi_close_to_expiration:
                                 print("Force saving checkpoint: ESI instance expiration approaching.")
                             with marked_timer("save_checkpoint", timing_raw, color="green"):
@@ -1531,6 +1532,20 @@ class RayPPOTrainer:
                         # update weights from trainer to rollout
                         with marked_timer("update_weights", timing_raw, color="red"):
                             self.checkpoint_manager.update_weights(self.global_steps)
+
+                        # debug dump: runs inference on the last clue + last guess
+                        # val rows using the rollout engine *after* it has received
+                        # the just-saved weights, so the dumped responses match
+                        # the checkpoint on disk.
+                        if saved_this_step:
+                            with marked_timer("dump_debug_samples", timing_raw, color="green"):
+                                try:
+                                    from custom_reward_functions.debug_dump import (
+                                        dump_checkpoint_debug_samples,
+                                    )
+                                    dump_checkpoint_debug_samples(self)
+                                except Exception as _e:
+                                    print(f"[debug-dump] hook failed: {_e!r}")
 
                         actor_output_metrics = reduce_metrics(actor_output.meta_info["metrics"])
                         metrics.update(actor_output_metrics)
