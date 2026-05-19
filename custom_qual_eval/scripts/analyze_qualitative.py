@@ -1,7 +1,12 @@
 """Compute quantitative + qualitative metrics across the three Qwen3-8B checkpoints.
 
 Outputs a metrics JSON and a structured findings JSON used by the report writer.
+
+Usage:
+    python analyze_qualitative.py                 # 24-prompt slice (default)
+    python analyze_qualitative.py --all           # 320-prompt slice
 """
+import argparse
 import json
 import re
 import ast
@@ -9,10 +14,24 @@ from collections import Counter
 from pathlib import Path
 
 OUT_DIR = Path("custom_qual_eval/outputs")
-FILES = {
-    "base":  OUT_DIR / "qwen3-8b.jsonl",
-    "s56":   OUT_DIR / "codenames-dapo-qwen3-8b-step56.jsonl",
-    "s112":  OUT_DIR / "codenames-dapo-qwen3-8b-step112.jsonl",
+
+FILE_SETS = {
+    "small": {
+        "files": {
+            "base":  OUT_DIR / "qwen3-8b.jsonl",
+            "s56":   OUT_DIR / "codenames-dapo-qwen3-8b-step56.jsonl",
+            "s112":  OUT_DIR / "codenames-dapo-qwen3-8b-step112.jsonl",
+        },
+        "metrics_out": OUT_DIR / "qual_metrics.json",
+    },
+    "all": {
+        "files": {
+            "base":  OUT_DIR / "qwen3-8b-all.jsonl",
+            "s56":   OUT_DIR / "codenames-dapo-qwen3-8b-step56-all.jsonl",
+            "s112":  OUT_DIR / "codenames-dapo-qwen3-8b-step112-all.jsonl",
+        },
+        "metrics_out": OUT_DIR / "qual_metrics-all.json",
+    },
 }
 
 SECTIONS = ["thinking", "reasoning", "reflection", "adjustment", "output"]
@@ -247,6 +266,14 @@ def evaluate_guess_record(rec, completion):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--all", action="store_true",
+                        help="use the 320-prompt '-all' file set")
+    args = parser.parse_args()
+    cfg = FILE_SETS["all" if args.all else "small"]
+    FILES = cfg["files"]
+    metrics_out = cfg["metrics_out"]
+
     data = {k: [json.loads(l) for l in open(v)] for k, v in FILES.items()}
 
     # Sanity checks
@@ -342,8 +369,8 @@ def main():
         "aggregates": aggregates,
         "by_difficulty": by_diff,
     }
-    Path("custom_qual_eval/outputs/qual_metrics.json").write_text(json.dumps(out, indent=2))
-    print("wrote custom_qual_eval/outputs/qual_metrics.json")
+    Path(metrics_out).write_text(json.dumps(out, indent=2))
+    print(f"wrote {metrics_out}")
 
 
 if __name__ == "__main__":

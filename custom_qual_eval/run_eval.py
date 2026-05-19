@@ -118,11 +118,14 @@ def load_parquet_all(path: str) -> pd.DataFrame:
 
 
 def sample_hf(name: str, split: str, n: int, seed: int) -> pd.DataFrame:
-    """Random sample of n rows from an HF dataset split."""
+    """Random sample of n rows from an HF dataset split. n <= 0 -> all rows."""
     from datasets import load_dataset
 
     ds = load_dataset(name, split=split)
-    n = min(n, len(ds))
+    if n <= 0 or n >= len(ds):
+        df = ds.to_pandas()
+        print(f"[data] hf {name}/{split}: {len(ds)} rows -> all", flush=True)
+        return df
     idx = random.Random(seed).sample(range(len(ds)), n)
     df = ds.select(idx).to_pandas()
     print(f"[data] hf {name}/{split}: {len(ds)} rows -> {n} sampled", flush=True)
@@ -187,7 +190,7 @@ def main() -> int:
                         "Default 3 -> 24 rows on v5 val (8 combos).")
     p.add_argument("--hf-split", default="validation")
     p.add_argument("--hf-n", type=int, default=24,
-                   help="Random sample size for HF datasets")
+                   help="Random sample size for HF datasets. Use 0 or -1 for ALL rows.")
     p.add_argument("--build-sample-to",
                    help="Write the sampled subset to this parquet path and exit "
                         "(no model loading, no inference). Use to fix the eval set "
