@@ -242,7 +242,7 @@ TOTAL_EPOCHS=$(python3 -c "import yaml; print(yaml.safe_load(open('${CONFIG_YAML
 [ "${DEBUG}" = "1" ] && TOTAL_EPOCHS=1
 dataset_rows=$(python3 -c "import pyarrow.parquet as pq; print(pq.read_metadata('${TRAIN_PARQUET}').num_rows)")
 total_steps=$(( (dataset_rows * TOTAL_EPOCHS + GEN_PROMPT_BSZ - 1) / GEN_PROMPT_BSZ ))
-save_freq=$(( total_steps / 16 )); [ "${save_freq}" -lt 1 ] && save_freq=1
+save_freq=$(( total_steps / 8 )); [ "${save_freq}" -lt 1 ] && save_freq=1
 echo "[ckpt] epochs=${TOTAL_EPOCHS}  rows=${dataset_rows}  steps≈${total_steps}  save_freq=${save_freq}"
 
 EXP_NAME="${EXP_NAME_PREFIX:-codenames-dapo-$(basename "${TRAINEE_MODEL_ID,,}")}-$(date +%Y%m%d-%H%M%S)"
