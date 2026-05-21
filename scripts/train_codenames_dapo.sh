@@ -80,11 +80,11 @@ print(f'[debug] wrote {t.num_rows} rows -> ${DEBUG_TRAIN_PARQUET}')
   TRAIN_PARQUET="${DEBUG_TRAIN_PARQUET}"
 fi
 
-TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-8B}"
+TRAINEE_MODEL_ID="${TRAINEE_MODEL_ID:-Qwen/Qwen3-4B}"
 TRAINEE_MODEL_PATH="${TRAINEE_MODEL_PATH:-${TRAINEE_MODEL_ID}}"
 
 # Judge settings
-JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-google/gemini-2.5-flash-lite}"          # empty = cosine mode
+JUDGE_MODEL_ID="${JUDGE_MODEL_ID:-google/gemini-2.5-flash}"          # empty = cosine mode
 JUDGE_BACKEND="${JUDGE_BACKEND:-openrouter}"  # "openrouter" or "local"
 JUDGE_PORT="${JUDGE_PORT:-8000}"
 JUDGE_HOST="${JUDGE_HOST:-127.0.0.1}"
