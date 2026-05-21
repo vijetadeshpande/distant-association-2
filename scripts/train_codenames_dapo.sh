@@ -167,8 +167,54 @@ stop_judge() {
   fi
 }
 
+# -----------------------------------------------------------------------------
+# 2b. Checkpoint → Google Drive sync daemon
+#
+# Runs scripts/sync_checkpoints_to_gdrive.sh alongside training to mirror
+# checkpoints/ to Drive every couple of hours. It is strictly best-effort:
+# a sync failure must NEVER abort or slow training, so every call is guarded
+# and only ever prints a warning.
+#
+# `cleanup` is the single EXIT-trap handler — it tears down BOTH the judge and
+# the sync daemon no matter how the script unwinds (success, error, Ctrl-C).
+# Stopping the daemon triggers one last upload of the final checkpoint.
+# -----------------------------------------------------------------------------
+SYNC_SCRIPT="${SCRIPT_DIR}/sync_checkpoints_to_gdrive.sh"
+SYNC_CHECKPOINTS="${SYNC_CHECKPOINTS:-1}"   # set 0 to disable Drive sync
+SYNC_STARTED=0
+
+start_checkpoint_sync() {
+  # Guarded so a non-zero exit here can never trip `set -e` and kill training.
+  if [ "${SYNC_CHECKPOINTS}" != "1" ]; then
+    echo "[ckpt-sync] SYNC_CHECKPOINTS=${SYNC_CHECKPOINTS} — Drive sync disabled"
+    return 0
+  fi
+  if [ "${DEBUG}" = "1" ]; then
+    echo "[ckpt-sync] debug run — skipping Drive sync"
+    return 0
+  fi
+  if bash "${SYNC_SCRIPT}" start; then
+    SYNC_STARTED=1
+  else
+    echo "[ckpt-sync] WARN: sync daemon failed to start — training continues" >&2
+  fi
+}
+
+stop_checkpoint_sync() {
+  [ "${SYNC_STARTED}" = "1" ] || return 0
+  echo "[ckpt-sync] stopping sync daemon (it runs one final upload first)"
+  bash "${SYNC_SCRIPT}" stop || true
+}
+
+# Single EXIT handler covering every teardown path. Each step is guarded so
+# the trap itself can never abort the script or mask training's exit code.
+cleanup() {
+  [ "${USE_LOCAL_JUDGE}" = "1" ] && stop_judge || true
+  stop_checkpoint_sync || true
+}
+trap cleanup EXIT
+
 if [ "${USE_LOCAL_JUDGE}" = "1" ]; then
-  trap stop_judge EXIT
   if [ "${SKIP_JUDGE:-0}" != "1" ]; then
     launch_judge
     wait_for_judge
@@ -314,6 +360,10 @@ fi
 #    Fixed hyperparameters come from codenames_dapo.yaml via --config-name.
 #    Only dynamic / environment-specific values are passed as CLI overrides.
 # -----------------------------------------------------------------------------
+# Start mirroring checkpoints/ to Google Drive. The `cleanup` EXIT trap above
+# stops it (with a final flush) whenever this script exits.
+start_checkpoint_sync
+
 python3 -m verl.trainer.main_ppo \
     --config-path "${REPO_ROOT}/scripts" \
     --config-name codenames_dapo \
