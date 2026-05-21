@@ -53,7 +53,10 @@ actor_rollout_ref:
       param_offload: True
   rollout:
     name: vllm
-    gpu_memory_utilization: 0.85
+    # Colocated single-GPU runs: the FSDP actor + ref (~16 GiB for a 4B model)
+    # stay resident while the vLLM rollout engine reserves its pool, so 0.85
+    # overcommits the card. 0.6 leaves headroom for both.
+    gpu_memory_utilization: 0.6
     checkpoint_engine:
       update_weights_bucket_megabytes: 3072
 
