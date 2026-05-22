@@ -7,11 +7,13 @@ launch command and GPU layout.
 
 Design choices
 --------------
-* **Thinking is always off.**  The judge should respond directly with
-  the guess block (a short pretext is fine, but no CoT scaffold).  We
-  send no system prompt and do not expose a knob to enable thinking —
+* **Thinking is off by default.**  The judge should respond directly
+  with the guess block (a short pretext is fine, but no CoT scaffold).
   Codenames training relies on the judge being a cheap, fast scorer,
-  not a reasoner.
+  not a reasoner.  ``judge_guess(..., judge_thinking=True)`` opts into a
+  dynamic reasoning budget; reasoning control is wired for the
+  OpenRouter backend only — a local vLLM OpenAI server may reject the
+  ``reasoning`` field, so that payload is left exactly as before.
 * **Single shared ClientSession per reward batch** — see
   ``make_session`` below.  The VeRL 0.7.1 experimental reward-loop
   already fans out ``run_single`` via ``asyncio.gather``, so the only
@@ -130,18 +132,25 @@ def build_guess_messages(all_words: Iterable[str], clue: str, max_guesses: int,
         all_words=shuffled, clue=clue, max_guesses=int(max_guesses)
     )
 
-    # Thinking is hardcoded off — no system prompt, single user turn.
+    # Single user turn, no system prompt. Reasoning (when enabled) is
+    # controlled via the `reasoning` field in judge_guess, not here.
     return [{"role": "user", "content": user_content}]
 
 
 async def judge_guess(session: aiohttp.ClientSession, sem: asyncio.Semaphore,
                       all_words, clue: str, max_guesses: int,
-                      model: str, backend: str = "openrouter") -> str | None:
+                      model: str, backend: str = "openrouter",
+                      judge_thinking: bool = False) -> str | None:
     """Call the judge once; return raw completion text or ``None`` on failure.
 
     ``model`` is the model identifier to send in the payload (e.g.
     ``"openai/gpt-4o"`` for OpenRouter, ``"qwen3-judge"`` for local
     vLLM).  ``backend`` selects the endpoint URL.
+
+    ``judge_thinking`` controls the OpenRouter ``reasoning`` field:
+    ``False`` (default) disables reasoning entirely; ``True`` requests a
+    dynamic reasoning budget (``thinkingBudget=-1``).  It is a no-op for
+    the local backend, whose payload is left exactly as before.
     """
     if not clue or int(max_guesses) < 1:
         return None
@@ -153,6 +162,20 @@ async def judge_guess(session: aiohttp.ClientSession, sem: asyncio.Semaphore,
         "temperature": JUDGE_TEMPERATURE,
         "max_tokens": JUDGE_MAX_TOKENS,
     }
+    # Reasoning control — OpenRouter backend only. A local vLLM OpenAI
+    # server may reject an unknown `reasoning` key, so its payload above
+    # is left untouched (matching the previous behaviour exactly).
+    if backend == "openrouter":
+        if judge_thinking:
+            # Dynamic budget: thinkingBudget=-1 lets the judge size its
+            # own reasoning. JUDGE_MAX_TOKENS must sit comfortably above
+            # the max budget (24576 for Gemini 2.5 Flash) so the final
+            # answer is never truncated — the launch script raises it to
+            # 32768 when JUDGE_THINKING=1.
+            payload["reasoning"] = {"max_tokens": -1}
+        else:
+            # Default: reasoning fully disabled (no thinking).
+            payload["reasoning"] = {"enabled": False}
 
     last_err: Exception | None = None
     backoff = 1.0

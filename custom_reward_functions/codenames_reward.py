@@ -80,6 +80,18 @@ def _as_list(value: Any) -> list:
     return list(value)
 
 
+def _as_bool(value: Any) -> bool:
+    """Coerce a config value (bool, int, or string) to ``bool``.
+
+    Hydra passes ``judge_thinking=true/false`` as a real boolean, but a
+    stray string like ``"false"`` would otherwise be truthy — so handle
+    the string case explicitly.
+    """
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    return bool(value)
+
+
 # Union of every format key produced by any scenario. The return dict
 # must contain all of these so VeRL sees a homogeneous schema. The
 # ``guess_*`` block is the trainee's (scenario a), while
@@ -281,7 +293,8 @@ def _build_return(
 
 async def _compute_score_clue(solution_str: str, extra_info: dict,
                               judge_model: str | None = None,
-                              judge_backend: str = "openrouter") -> dict:
+                              judge_backend: str = "openrouter",
+                              judge_thinking: bool = False) -> dict:
     """Spymaster scoring path.
 
     Pipeline: parse rollout → score clue+thinking format → short-circuit
@@ -392,6 +405,7 @@ async def _compute_score_clue(solution_str: str, extra_info: dict,
                 max_guesses=len(pc.selected_targets),
                 model=judge_model,
                 backend=judge_backend,
+                judge_thinking=judge_thinking,
             )
     except Exception as e:  # network / protocol errors only; log and fall through
         logger.exception("Judge call crashed: %r", e)
@@ -548,7 +562,8 @@ def _route_task(extra_info: dict) -> str:
 
 async def compute_score(data_source, solution_str, ground_truth,
                         extra_info=None, judge_model: str | None = None,
-                        judge_backend: str = "openrouter", **kwargs) -> dict:
+                        judge_backend: str = "openrouter",
+                        judge_thinking: bool = False, **kwargs) -> dict:
     """VeRL-compatible async reward function.
 
     Returns a dict with ``score`` (scalar used for optimization) plus
@@ -562,6 +577,8 @@ async def compute_score(data_source, solution_str, ground_truth,
       ``judge_model="openai/gpt-4o"``          → OpenRouter (default backend)
       ``judge_model="qwen3-judge"``
       ``judge_backend="local"``                → local vLLM server on GPUs
+      ``judge_thinking=False``                 → judge reasoning disabled (default)
+      ``judge_thinking=True``                  → dynamic reasoning budget (OpenRouter)
 
     Routes to the clue or guess scorer based on ``extra_info["task"]``.
     Guess task never uses the judge; judge args are clue-task-only.
@@ -572,4 +589,5 @@ async def compute_score(data_source, solution_str, ground_truth,
         return await _compute_score_guess(solution_str, extra_info)
     return await _compute_score_clue(solution_str, extra_info,
                                      judge_model=judge_model,
-                                     judge_backend=judge_backend)
+                                     judge_backend=judge_backend,
+                                     judge_thinking=_as_bool(judge_thinking))

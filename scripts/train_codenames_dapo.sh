@@ -331,11 +331,27 @@ fi
 # -----------------------------------------------------------------------------
 judge_overrides=()
 if [ "${USE_JUDGE}" = "1" ]; then
+  # Judge "thinking" (reasoning) is OFF by default. Set JUDGE_THINKING=1
+  # to let the judge use a dynamic reasoning budget. Reasoning control is
+  # applied for the OpenRouter backend only — see judge_client.py.
+  JUDGE_THINKING="${JUDGE_THINKING:-0}"
+  case "${JUDGE_THINKING,,}" in
+    1|true|on|yes) JUDGE_THINKING_BOOL=true ;;
+    *)             JUDGE_THINKING_BOOL=false ;;
+  esac
+
   # Tune these for OpenRouter rate limits or local GPU capacity.
-  # Judge thinking is always off — see custom_reward_functions/judge_client.py.
   export JUDGE_CONCURRENCY="${JUDGE_CONCURRENCY:-128}"
-  export JUDGE_MAX_TOKENS="${JUDGE_MAX_TOKENS:-1024}"
   export JUDGE_TEMPERATURE="${JUDGE_TEMPERATURE:-0.0}"
+  # max_tokens must comfortably exceed the reasoning budget so the judge's
+  # final answer is never truncated. With thinking on, Gemini 2.5 Flash's
+  # dynamic budget can reach 24576 tokens → default to 32768; with thinking
+  # off the guess block alone needs only ~1024.
+  if [ "${JUDGE_THINKING_BOOL}" = "true" ]; then
+    export JUDGE_MAX_TOKENS="${JUDGE_MAX_TOKENS:-32768}"
+  else
+    export JUDGE_MAX_TOKENS="${JUDGE_MAX_TOKENS:-1024}"
+  fi
 
   # Model name sent in the API payload differs by backend:
   #   local     → the --served-model-name vLLM was launched with
@@ -353,6 +369,8 @@ if [ "${USE_JUDGE}" = "1" ]; then
   # silently falls back to cosine mode and tries to load the GloVe table.
   judge_overrides+=("+reward.custom_reward_function.reward_kwargs.judge_model=${JUDGE_PAYLOAD_MODEL}")
   judge_overrides+=("+reward.custom_reward_function.reward_kwargs.judge_backend=${JUDGE_BACKEND}")
+  judge_overrides+=("+reward.custom_reward_function.reward_kwargs.judge_thinking=${JUDGE_THINKING_BOOL}")
+  echo "[judge] thinking=${JUDGE_THINKING_BOOL}  max_tokens=${JUDGE_MAX_TOKENS}  backend=${JUDGE_BACKEND}"
 fi
 
 # -----------------------------------------------------------------------------
