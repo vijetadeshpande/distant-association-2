@@ -30,6 +30,44 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from verify_merged_checkpoint import verify as verify_merged
+
+
+def consolidate_safetensors(target_dir: Path) -> None:
+    """Rewrite sharded model-*.safetensors as a single model.safetensors.
+
+    VeRL's merger calls `save_pretrained` with HF's default 5GB shard size,
+    which produces model-00001-of-0000N.safetensors + index.json. We want
+    a single model.safetensors instead.
+    """
+    shards = sorted(target_dir.glob("model-*-of-*.safetensors"))
+    single = target_dir / "model.safetensors"
+    if single.exists() and not shards:
+        return
+    if not shards:
+        return
+
+    from safetensors import safe_open
+    from safetensors.torch import save_file
+
+    tensors = {}
+    metadata = None
+    for shard in shards:
+        with safe_open(str(shard), framework="pt") as f:
+            md = f.metadata()
+            if md is not None and metadata is None:
+                metadata = md
+            for key in f.keys():
+                tensors[key] = f.get_tensor(key)
+
+    save_file(tensors, str(single), metadata=metadata)
+    for shard in shards:
+        shard.unlink()
+    index = target_dir / "model.safetensors.index.json"
+    if index.exists():
+        index.unlink()
+
 
 def find_actor_dirs(run_dir: Path) -> list[Path]:
     def step_num(p: Path) -> int:
@@ -53,32 +91,44 @@ def find_actor_dirs(run_dir: Path) -> list[Path]:
     return actor_dirs
 
 
-def merge_one(actor_dir: Path, out_name: str, force: bool) -> bool:
+def merge_one(actor_dir: Path, out_name: str, force: bool, verify: bool) -> bool:
     target_dir = actor_dir / out_name
-    if target_dir.exists() and not force:
-        if list(target_dir.glob("*.safetensors")) or list(target_dir.glob("*.bin")):
-            print(f"  [done] {actor_dir.parent.name}: already merged -> {target_dir}")
-            return True
+    single = target_dir / "model.safetensors"
+    shards = list(target_dir.glob("model-*-of-*.safetensors")) if target_dir.exists() else []
+    already_merged = target_dir.exists() and not force and single.exists() and not shards
 
-    cmd = [
-        sys.executable,
-        "-m",
-        "verl.model_merger",
-        "merge",
-        "--backend",
-        "fsdp",
-        "--local_dir",
-        str(actor_dir),
-        "--target_dir",
-        str(target_dir),
-    ]
-    print(f"  [merge] {actor_dir.parent.name} -> {target_dir}")
-    print(f"          {' '.join(cmd)}")
-    result = subprocess.run(cmd)
-    if result.returncode != 0:
-        print(f"  [FAIL] {actor_dir.parent.name}: merger exited {result.returncode}")
-        return False
-    print(f"  [ok]   {actor_dir.parent.name}")
+    if already_merged:
+        print(f"  [done] {actor_dir.parent.name}: already merged -> {target_dir}")
+    elif target_dir.exists() and not force and shards:
+        print(f"  [consolidate] {actor_dir.parent.name}: collapsing {len(shards)} shards -> model.safetensors")
+        consolidate_safetensors(target_dir)
+        print(f"  [ok]   {actor_dir.parent.name}")
+    else:
+        cmd = [
+            sys.executable,
+            "-m",
+            "verl.model_merger",
+            "merge",
+            "--backend",
+            "fsdp",
+            "--local_dir",
+            str(actor_dir),
+            "--target_dir",
+            str(target_dir),
+        ]
+        print(f"  [merge] {actor_dir.parent.name} -> {target_dir}")
+        print(f"          {' '.join(cmd)}")
+        result = subprocess.run(cmd)
+        if result.returncode != 0:
+            print(f"  [FAIL] {actor_dir.parent.name}: merger exited {result.returncode}")
+            return False
+        consolidate_safetensors(target_dir)
+        print(f"  [ok]   {actor_dir.parent.name}")
+
+    if verify:
+        ok, _ = verify_merged(actor_dir, target_dir)
+        if not ok:
+            return False
     return True
 
 
@@ -94,6 +144,11 @@ def main() -> int:
         "--force",
         action="store_true",
         help="Re-merge even if a merged checkpoint already exists",
+    )
+    parser.add_argument(
+        "--no-verify",
+        action="store_true",
+        help="Skip the post-merge consistency check against the FSDP shards",
     )
     args = parser.parse_args()
 
@@ -111,7 +166,7 @@ def main() -> int:
     print(f"Found {len(actor_dirs)} checkpoint(s) to merge.\n")
     failed = []
     for actor_dir in actor_dirs:
-        if not merge_one(actor_dir, args.out_name, args.force):
+        if not merge_one(actor_dir, args.out_name, args.force, verify=not args.no_verify):
             failed.append(actor_dir.parent.name)
         print()
 
