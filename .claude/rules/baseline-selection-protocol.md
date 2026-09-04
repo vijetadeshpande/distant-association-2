@@ -89,12 +89,13 @@ These runs must use the static single-turn VeRL/DAPO path used by Codenames.
 
 ### 3.2 Optional supplemental baseline
 
-`wordle-online` may be run as a fourth, supplemental baseline. It is useful as
-a lexical/orthographic game control and has an OpenEnv/TRL GRPO precedent.
-Because it is a multi-turn environment run rather than a static VeRL/DAPO
-dataset, it must not be placed in the same table as if row count and training
-algorithm were matched. Report it in a separate environment-RL analysis and
-match policy-token budget as closely as possible.
+`wordle-state` may be run as a fourth, supplemental baseline. It is useful as
+a lexical/orthographic game control. Derive static TextArena Wordle states with
+a visible legal history and ask for exactly one next guess. This keeps the
+same single-turn VeRL/DAPO path as Codenames and the primary controls. Treat it
+as a predeclared supplemental mechanism analysis, not a fourth baseline needed
+to call the primary matrix complete. An online multi-turn Wordle run remains a
+different optional experiment and must be reported separately.
 
 ### 3.3 Excluded baseline
 
@@ -400,6 +401,16 @@ Procedure:
    that the mixture is learnable; do not use protected evaluation performance.
 7. Select 4,000 unique rows and then make a stratified 3,680/320 split.
 
+For the primary random sample, set `dataset_curation_seed=20260904` and rank
+eligible source IDs by `SHA256("20260904" || source_row_id)`. Select by that
+order within the predeclared cross-strata of rendered-token-length quartile and
+answer bucket (`negative`, `0_or_1`, `2_to_9`, `10_to_99`, `100_plus`). Allocate
+the 4,000-row stratum quotas proportionally by largest remainder, subject to a
+minimum of 20 rows for every nonempty cross-stratum. Use a second namespaced
+hash (`"split" || row_id`) to select 320 validation rows with proportional
+largest-remainder quotas. Hash ranking makes the sample independent of upstream
+file order. Freeze the eligible-pool hash and quotas before GPU calibration.
+
 Use `data_source="math_dapo"`. Keep the existing deterministic `+1/-1`
 correctness scorer unless a documented scorer bug is found.
 
@@ -444,6 +455,17 @@ Use these total-row quotas:
 Stratify answer labels within each domain. Parse the last
 `<answer>...</answer>` block, normalize case and whitespace, and compare only
 against the domain’s legal answer set. Reject multiple or illegal final labels.
+
+Use `dataset_curation_seed=20260904`. After canonicalization and grouping, rank
+groups by `SHA256("20260904" || domain || split_group_id)`. Within each domain,
+allocate its total quota across legal labels proportionally by largest
+remainder, then take groups in hash order; never take two canonical duplicate
+prompts merely to fill a quota. Select validation groups using the independent
+namespace `"split" || domain || split_group_id`, meeting the fixed domain
+counts above and proportional label counts as closely as whole groups allow.
+If group sizes make an exact domain count impossible, deterministically retain
+one canonical row per group for the primary dataset and record the discarded
+variants; do not move a group across splits or change the seed.
 
 Do not add RuleReasoner’s DADS domain reweighting. If rule order is shuffled,
 materialize one deterministic row-specific permutation during curation and
@@ -705,8 +727,10 @@ token-budget-matched checkpoint may be evaluated if it was defined before
 downstream results are inspected; it does not replace the update-matched
 primary checkpoint.
 
-For online Wordle, the matching unit is total policy-generated tokens and
-episodes, not “4,000 prompts.” Record environment/tool-response tokens
+For static `wordle-state`, use the same update-count match as the other static
+baselines and report its generated-policy-token ratio. For a separate online
+Wordle experiment, the matching unit is total policy-generated tokens and
+episodes, not “4,000 prompts”; record environment/tool-response tokens
 separately from policy tokens.
 
 ## 13. Runtime safety and abort rules
@@ -746,7 +770,8 @@ For the 8B primary endpoint, evaluate on identical prompts and settings:
 8B Mastermind-state at matched endpoint
 ```
 
-Add Wordle only in a separate supplemental analysis.
+Add static Wordle only as a predeclared supplemental mechanism analysis. Keep
+any online Wordle experiment separate from the static matched table.
 
 For 14B, evaluate only the predeclared available matrix. Do not fill missing
 14B cells with 8B scores or compare cross-scale absolute values as treatment
@@ -919,7 +944,8 @@ A baseline is complete only when all boxes below can be checked.
 - [ ] DAT co-primary specificity contrasts reported.
 - [ ] Confidence intervals use the correct resampling unit.
 - [ ] Training-seed limitation stated where applicable.
-- [ ] Online Wordle, if run, is separated from static matched baselines.
+- [ ] Static Wordle, if run, is labelled supplemental; online Wordle is kept
+      separate from static matched baselines.
 
 ## 17. Pre-run decision-record template
 
@@ -944,7 +970,8 @@ primary_baselines:
   - math
   - logic
   - mastermind
-supplemental_wordle: false
+supplemental_wordle_state: false
+supplemental_wordle_online: false
 
 training_seeds: []
 dataset_curation_seed: null
