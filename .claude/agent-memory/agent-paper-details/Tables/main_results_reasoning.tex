@@ -1,0 +1,27 @@
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}p{4cm} | ccc | ccc | ccc@{}}
+\toprule
+ & \multicolumn{3}{c}{\textbf{1.7B}} & \multicolumn{3}{c}{\textbf{4B}} & \multicolumn{3}{c}{\textbf{8B}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+\textbf{Dataset -- Metric} & Base & Our FT & $\Delta$ & Base & Our FT & $\Delta$ & Base & Our FT & $\Delta$ \\
+\midrule
+AIME24 -- Accuracy & $0.4333$ & $0.5667$ & \dup & $0.6667$ & $0.7000$ & \dup & $0.8000$ & $0.6667$ & \ddn \\
+AIME25 -- Accuracy & $0.2667$ & $0.3333$ & \dup & $0.5667$ & $0.6333$ & \dup & $0.7333$ & $0.7333$ & \deq \\
+GPQA-Diamond -- Accuracy & $0.4141$ & $0.4697$ & \dup & $0.5253$ & $0.5455$ & \dup & $0.6111$ & $0.5909$ & \ddn \\
+GSM8K -- Extractive Match & $0.8810$ & $0.8923$ & \dup & $0.9431$ & $0.9416$ & \ddn & $0.9507$ & $0.9500$ & \ddn \\
+%\addlinespace[3pt]
+%MuSR (Murder Mysteries) -- Accuracy & $0.5040$ & $0.5000$ & \ddn & $0.4960$ & $0.5040$ & \dup & $0.5120$ & $0.5240$ & \dup \\
+%MuSR (Object Placements) -- Accuracy & $0.3203$ & $0.3203$ & \deq & $0.2656$ & $0.2695$ & \dup & $0.2812$ & $0.2930$ & \dup \\
+%MuSR (Team Allocation) -- Accuracy & $0.4880$ & $0.5040$ & \dup & $0.4920$ & $0.5000$ & \dup & $0.4920$ & $0.4880$ & \ddn \\
+%\midrule
+%\midrule
+%Num. Improved Dataset-Metrics (out of $7$) &  &  & $5$ &  &  & $6$ & & & $2$ \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Reasoning Evaluation.} Performance on $4$ reasoning evaluation tasks across three models, Qwen3-1.7B, 4B and 8B. The ``Base'' and ``Our FT'' columns present results for off-the-shelf and trained ($230$ steps) checkpoints. The ``$\Delta$'' column indicates whether our proposed training method improves (\dup) the base model or not (\ddn).}
+\label{tab:reasoning-results}
+\end{table*}

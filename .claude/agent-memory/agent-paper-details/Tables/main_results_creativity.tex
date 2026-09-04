@@ -1,0 +1,79 @@
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}p{6cm} | ccc | ccc | ccc@{}}
+\toprule
+ & \multicolumn{3}{c}{\textbf{1.7B}} & \multicolumn{3}{c}{\textbf{4B}} & \multicolumn{3}{c}{\textbf{8B}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+\textbf{Dataset -- Metric} & Base & Our FT & $\Delta$ & Base & Our FT & $\Delta$ & Base & Our FT & $\Delta$ \\
+\midrule
+
+AUT -- Creativity & $2.5000$ & $2.5000$ & \deq & $2.8600$ & $2.9333$ & \dup & $\mathbf{3.3733}$ & $3.3533$ & \ddn \\
+AUT -- Coherence & $4.5667$ & $4.7400$ & \dup & $4.8733$ & $4.7200$ & \ddn & $4.8800$ & $\mathbf{4.9000}$ & \dup \\
+
+\addlinespace[3pt]
+
+DAT -- DSI & $0.5519$ & $0.5422$ & \ddn & $0.5381$ & $0.5284$ & \ddn & $0.5837$ & $\mathbf{0.5886}$ & \dup \\
+DAT -- Vocab. Size & $0.2010$ & $0.1010$ & \ddn & $0.1580$ & $0.1060$ & \ddn & $0.2590$ & $\mathbf{0.2830}$ & \dup \\
+
+\midrule
+
+RAT -- Accuracy & $0.0554$ & $0.0590$ & \dup & $0.1144$ & $0.1255$ & \dup & $0.3432$ & $\mathbf{0.3506}$ & \dup \\
+
+\midrule
+
+MUNCH (Gen.) -- Recall & $0.3539$ & $0.3654$ & \dup & $0.4423$ & $0.4585$ & \dup & $0.4653$ & $\mathbf{0.4785}$ & \dup \\
+MUNCH (Sent. Implicit) -- Accuracy & $0.4202$ & $0.4223$ & \dup & $0.5040$ & $0.4899$ & \ddn & $0.5282$ & $\mathbf{0.5436}$ & \dup \\
+MUNCH (Sent. Mword) -- Accuracy & $0.4182$ & $0.4189$ & \dup & $0.5516$ & $0.5489$ & \ddn & $0.5724$ & $\mathbf{0.5744}$ & \dup \\
+MUNCH (Word) -- Accuracy & $0.6079$ & $0.6046$ & \ddn & $0.5416$ & $\mathbf{0.5757}$ & \dup & $0.5503$ & $0.5664$ & \dup \\
+
+\addlinespace[3pt]
+
+NY-Caption (Explanation) -- Score & $2.0891$ & $2.1859$ & \dup & $2.4869$ & $2.5499$ & \dup & $2.7757$ & $\mathbf{2.8510}$ & \dup \\
+NY-Caption (Matching) -- Accuracy & $0.4062$ & $0.4326$ & \dup & $0.5362$ & $0.5392$ & \dup & $0.5712$ & $\mathbf{0.5957}$ & \dup \\
+%NY-Caption (Ranking) -- Accuracy & $0.5577$ & $0.5440$ & $0.5604$ & -- & $0.5550$ & $0.5531$ \\
+
+\midrule
+
+MacGyver -- Efficiency & $3.3548$ & $3.4921$ & \dup & $4.1064$ & $4.1642$ & \dup & $4.3557$ & $\mathbf{4.3722}$ & \dup \\
+MacGyver -- Feasibility & $2.8562$ & $2.9691$ & \dup & $2.7184$ & $2.7479$ & \dup & $2.9327$ & $\mathbf{2.9412}$ & \dup \\
+
+\addlinespace[3pt]
+
+%NYT Connections -- avg max jaccard & $0.6201$ & $0.6416$ & $0.7349$ & -- & $0.8332$ & $0.8134$ \\
+NYT Connections -- Group Acc. & $0.2998$ & $0.3217$ & \dup & $0.5038$ & $0.4889$ & \ddn & $\mathbf{0.6794}$ & $0.6515$ & \ddn \\
+NYT Connections -- Perfect Match & $0.1150$ & $0.1166$ & \dup & $0.2991$ & $0.2761$ & \ddn & $\mathbf{0.5077}$ & $0.4724$ & \ddn \\
+
+\midrule
+
+CWT -- Creativity & $2.2794$ & $2.1471$ & \ddn & $2.6714$ & $2.6714$ & \deq & $2.6714$ & $\mathbf{2.8571}$ & \dup \\
+CWT -- Coherence & $4.0588$ & $4.0882$ & \dup & $4.4429$ & $4.2571$ & \ddn & $4.7000$ & $\mathbf{4.7714}$ & \dup \\
+CWT -- DSI & $0.7460$ & $0.7433$ & \ddn & $0.7544$ & $0.7567$ & \dup & $0.7588$ & $\mathbf{0.7612}$ & \dup \\
+CWT -- MTLD & $54.4920$ & $54.0313$ & \ddn & $64.9288$ & $66.8451$ & \dup & $73.0871$ & $\mathbf{76.2662}$ & \dup \\
+%CWT -- MTLD-MA & $50.1845$ & $49.5622$ & \ddn & $61.1182$ & $62.0339$ & \dup & $66.2217$ & $\mathbf{68.4891}$ & \dup \\
+
+\addlinespace[3pt]
+
+%EQ-Bench -- Rubric Score & $28.8600$ & $28.7900$ & \ddn & $36.5400$ & $36.2900$ & \ddn & $41.6900$ & $41.5400$ & \ddn \\
+EQ-Bench -- Creativity & $31.4200$ & $31.7100$ & \dup & $39.2500$ & $39.6100$ & \dup & $48.2000$ & $\mathbf{48.8400}$ & \dup \\
+
+\midrule
+
+Grounding (Non-sensorimotor) -- Spearman-r & $0.5605$ & $0.5553$ & \ddn & $0.4827$ & $0.4568$ & \ddn & $0.4902$ & $\mathbf{0.4990}$ & \dup \\
+Grounding (Sensory) -- Spearman-r & $0.4142$ & $0.4326$ & \dup & $0.5843$ & $0.5940$ & \dup & $0.6056$ & $\mathbf{0.6131}$ & \dup \\
+Grounding (Motor) -- Spearman-r & $0.4196$ & $0.4104$ & \ddn & $0.5311$ & $0.5258$ & \ddn & $0.5104$ & $\mathbf{0.5345}$ & \dup \\
+%LLM Grounding -- p value Non-sensorimotor & $0.0157$ & $0.0750$ & $0.0053$ & -- & $0.0008$ & $0.0001$ \\
+%LLM Grounding -- p value Sensory & $0.0280$ & $0.0233$ & $0.0002$ & -- & $0.0000$ & $0.0000$ \\
+%LLM Grounding -- p value Motor & $0.0130$ & $0.0228$ & $0.0004$ & -- & $0.0006$ & $0.0001$ \\
+
+
+%\midrule
+%\midrule
+%Num. Improved Dataset-Metrics (out of $23$) &  &  & $13$ &  &  & $11$ & & & $19$ \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Creativity Evaluation.} Performance on $10$ creativity evaluation tasks across three models, Qwen3-1.7B, 4B and 8B. The ``Base'' and ``Our FT'' columns present results for off-the-shelf and trained ($230$ steps) checkpoints. The ``$\Delta$'' column indicates whether our proposed training method improves (\dup) the base model or not (\ddn).}
+\label{tab:finetuning-results}
+\end{table*}
