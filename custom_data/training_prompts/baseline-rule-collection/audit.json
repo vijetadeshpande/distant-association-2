@@ -1,0 +1,3199 @@
+{
+  "baseline": "rule_collection",
+  "cross_split_canonical_prompt_overlap": 0,
+  "cross_split_group_overlap": 0,
+  "domains": {
+    "ar_lsat": {
+      "canonical_unique_prompts": 1623,
+      "conflicting_label_groups_removed": 0,
+      "conflicting_label_rows_removed": 0,
+      "eligible_prompt_lengths": {
+        "count": 1623,
+        "max": 948,
+        "median": 639,
+        "min": 552,
+        "p90": 692,
+        "p95": 716,
+        "p99": 769
+      },
+      "eligible_rows": 1623,
+      "exact_duplicate_rows": 13,
+      "ground_truth_scorer_failures": 0,
+      "malformed_or_illegal_ground_truth_rows": 0,
+      "near_duplicate_grouping": {
+        "candidate_pairs": 4,
+        "cross_context_pairs": 0,
+        "pair_examples": [
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:ar_lsat:300",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:ar_lsat:1466",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.877863
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:ar_lsat:655",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:ar_lsat:1564",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.931507
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:ar_lsat:989",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:ar_lsat:1169",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.946667
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:ar_lsat:1052",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:ar_lsat:1432",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.908451
+          }
+        ]
+      },
+      "overlength_rows_removed": 0,
+      "same_label_duplicate_rows_removed": 13,
+      "sampling": {
+        "available_labels": {
+          "a": 322,
+          "b": 331,
+          "c": 317,
+          "d": 318,
+          "e": 335
+        },
+        "total_label_quotas": {
+          "a": 132,
+          "b": 136,
+          "c": 130,
+          "d": 131,
+          "e": 138
+        },
+        "training_label_quotas": {
+          "a": 121,
+          "b": 125,
+          "c": 120,
+          "d": 120,
+          "e": 127
+        },
+        "validation_label_quotas": {
+          "a": 11,
+          "b": 11,
+          "c": 10,
+          "d": 11,
+          "e": 11
+        },
+        "validation_split_groups": 54
+      },
+      "source_rows": 1636
+    },
+    "folio": {
+      "canonical_unique_prompts": 966,
+      "conflicting_label_groups_removed": 0,
+      "conflicting_label_rows_removed": 0,
+      "eligible_prompt_lengths": {
+        "count": 966,
+        "max": 685,
+        "median": 510,
+        "min": 450,
+        "p90": 566,
+        "p95": 593,
+        "p99": 636
+      },
+      "eligible_rows": 966,
+      "exact_duplicate_rows": 0,
+      "ground_truth_scorer_failures": 0,
+      "malformed_or_illegal_ground_truth_rows": 0,
+      "near_duplicate_grouping": {
+        "candidate_pairs": 225,
+        "cross_context_pairs": 0,
+        "pair_examples": [
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:0",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:27",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.947368
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:3",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:66",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.9
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:6",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:25",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.885246
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:10",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:252",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.87931
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:10",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:277",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.912281
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:12",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:320",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.892857
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:14",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:169",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.871429
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:16",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:305",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.94898
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:18",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:170",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.942308
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:18",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:902",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.890909
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:24",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:54",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.883929
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:24",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:910",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.888889
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:24",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:954",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.883929
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:26",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:740",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.921053
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:28",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:375",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.947368
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:35",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:238",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.891304
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:35",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:766",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.933333
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:44",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:915",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.904762
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:52",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:843",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.871429
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:54",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:910",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.86087
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:54",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:924",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.883929
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:54",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:954",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.942857
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:57",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:134",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.894231
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:59",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:266",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.860465
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:62",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:394",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.892157
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:64",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:855",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.883721
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:67",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:806",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855556
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:68",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:85",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.865385
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:73",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:724",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.879518
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:74",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:525",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.932432
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:77",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:325",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.871429
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:77",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:585",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.884058
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:80",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:113",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.945946
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:80",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:933",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.921053
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:82",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:440",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.879699
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:85",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:624",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.882353
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:87",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:822",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.883117
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:88",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:376",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.882979
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:92",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:128",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.902174
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:93",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:461",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.911765
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:98",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:529",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:99",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:662",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.88
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:100",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:180",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.88
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:104",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:289",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.882353
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:104",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:847",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.9
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:108",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:509",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.857143
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:109",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:131",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.898734
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:109",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:832",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.898734
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:113",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:933",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.921053
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:118",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:646",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.898551
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:122",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:746",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.903846
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:126",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:227",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.987805
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:131",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:832",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.857143
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:132",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:893",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.863636
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:134",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:579",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:136",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:223",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.868852
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:137",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:948",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.981132
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:142",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:730",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.870968
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:143",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:797",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.853933
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:146",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:464",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.923077
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:150",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:273",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.871429
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:150",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:782",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.911765
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:151",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:155",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.866667
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:151",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:526",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.866667
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:152",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:430",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.89916
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:155",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:526",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.886364
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:158",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:274",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.911111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:165",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:761",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.865854
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:165",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:957",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.948052
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:166",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:496",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.864865
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:170",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:902",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.907407
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:172",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:565",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.891304
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:182",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:686",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.87013
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:182",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:909",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.87013
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:191",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:646",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.882353
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:196",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:327",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.852941
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:199",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:865",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.875
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:209",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:655",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.877049
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:210",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:916",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.898305
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:215",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:402",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.980392
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:218",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:457",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.886792
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:226",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:592",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.897059
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:226",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:784",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.938462
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:228",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:885",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:229",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:680",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.892857
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:231",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:336",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.884211
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:234",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:306",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.913043
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:236",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:619",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.864865
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:237",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:655",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.884298
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:238",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:766",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.891304
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:241",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:435",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.911111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:248",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:343",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.917808
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:249",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:259",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.882353
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:250",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:479",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.884615
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:250",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:606",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.884615
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:251",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:789",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.962963
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:252",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:277",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.894737
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:255",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:366",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.910714
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:255",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:618",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.87931
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:folio:261",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:folio:820",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.897959
+          }
+        ]
+      },
+      "overlength_rows_removed": 0,
+      "same_label_duplicate_rows_removed": 0,
+      "sampling": {
+        "available_labels": {
+          "false": 277,
+          "true": 371,
+          "unknown": 318
+        },
+        "total_label_quotas": {
+          "false": 191,
+          "true": 256,
+          "unknown": 220
+        },
+        "training_label_quotas": {
+          "false": 176,
+          "true": 235,
+          "unknown": 202
+        },
+        "validation_label_quotas": {
+          "false": 15,
+          "true": 21,
+          "unknown": 18
+        },
+        "validation_split_groups": 54
+      },
+      "source_rows": 966
+    },
+    "logic_nli": {
+      "canonical_unique_prompts": 1000,
+      "conflicting_label_groups_removed": 0,
+      "conflicting_label_rows_removed": 0,
+      "eligible_prompt_lengths": {
+        "count": 1000,
+        "max": 783,
+        "median": 710,
+        "min": 658,
+        "p90": 734,
+        "p95": 740,
+        "p99": 755
+      },
+      "eligible_rows": 1000,
+      "exact_duplicate_rows": 7000,
+      "ground_truth_scorer_failures": 0,
+      "malformed_or_illegal_ground_truth_rows": 0,
+      "near_duplicate_grouping": {
+        "candidate_pairs": 0,
+        "cross_context_pairs": 0,
+        "pair_examples": []
+      },
+      "overlength_rows_removed": 0,
+      "same_label_duplicate_rows_removed": 7000,
+      "sampling": {
+        "available_labels": {
+          "contradiction": 271,
+          "entailment": 235,
+          "neutral": 253,
+          "self_contradiction": 241
+        },
+        "total_label_quotas": {
+          "contradiction": 181,
+          "entailment": 156,
+          "neutral": 169,
+          "self_contradiction": 161
+        },
+        "training_label_quotas": {
+          "contradiction": 167,
+          "entailment": 144,
+          "neutral": 155,
+          "self_contradiction": 148
+        },
+        "validation_label_quotas": {
+          "contradiction": 14,
+          "entailment": 12,
+          "neutral": 14,
+          "self_contradiction": 13
+        },
+        "validation_split_groups": 53
+      },
+      "source_rows": 8000
+    },
+    "logical_deduction": {
+      "canonical_unique_prompts": 1200,
+      "conflicting_label_groups_removed": 0,
+      "conflicting_label_rows_removed": 0,
+      "eligible_prompt_lengths": {
+        "count": 1200,
+        "max": 671,
+        "median": 591,
+        "min": 511,
+        "p90": 652,
+        "p95": 657,
+        "p99": 661
+      },
+      "eligible_rows": 1200,
+      "exact_duplicate_rows": 0,
+      "ground_truth_scorer_failures": 0,
+      "malformed_or_illegal_ground_truth_rows": 0,
+      "near_duplicate_grouping": {
+        "candidate_pairs": 19,
+        "cross_context_pairs": 0,
+        "pair_examples": [
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:21",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:1029",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.868571
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:37",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:1196",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.875
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:47",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:768",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.852713
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:93",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:373",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.850299
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:167",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:432",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.863636
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:177",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:706",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.863354
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:211",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:1015",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.854962
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:285",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:429",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.860606
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:362",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:1063",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.863354
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:469",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:504",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.858896
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:469",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:811",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.858896
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:484",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:1112",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.868217
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:504",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:811",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.864198
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:511",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:537",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855422
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:516",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:882",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.857143
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:524",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:694",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.858025
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:852",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:1075",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.852761
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:935",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:1049",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855422
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:logical_deduction:1030",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:logical_deduction:1173",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.857143
+          }
+        ]
+      },
+      "overlength_rows_removed": 0,
+      "same_label_duplicate_rows_removed": 0,
+      "sampling": {
+        "available_labels": {
+          "a": 245,
+          "b": 240,
+          "c": 238,
+          "d": 163,
+          "e": 161,
+          "f": 81,
+          "g": 72
+        },
+        "total_label_quotas": {
+          "a": 136,
+          "b": 133,
+          "c": 132,
+          "d": 91,
+          "e": 90,
+          "f": 45,
+          "g": 40
+        },
+        "training_label_quotas": {
+          "a": 125,
+          "b": 122,
+          "c": 122,
+          "d": 84,
+          "e": 83,
+          "f": 41,
+          "g": 37
+        },
+        "validation_label_quotas": {
+          "a": 11,
+          "b": 11,
+          "c": 10,
+          "d": 7,
+          "e": 7,
+          "f": 4,
+          "g": 3
+        },
+        "validation_split_groups": 53
+      },
+      "source_rows": 1200
+    },
+    "prontoqa": {
+      "canonical_unique_prompts": 7884,
+      "conflicting_label_groups_removed": 0,
+      "conflicting_label_rows_removed": 0,
+      "eligible_prompt_lengths": {
+        "count": 7884,
+        "max": 714,
+        "median": 567,
+        "min": 496,
+        "p90": 623,
+        "p95": 631,
+        "p99": 656
+      },
+      "eligible_rows": 7884,
+      "exact_duplicate_rows": 116,
+      "ground_truth_scorer_failures": 0,
+      "malformed_or_illegal_ground_truth_rows": 0,
+      "near_duplicate_grouping": {
+        "candidate_pairs": 255,
+        "cross_context_pairs": 113,
+        "pair_examples": [
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:34",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6959",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.868421
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:59",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3234",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.895833
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:63",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:616",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.875
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:104",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7108",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.923077
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:109",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7252",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.927536
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:138",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6917",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855072
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:169",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3347",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.921875
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:171",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:2176",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.921875
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:181",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6207",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.852941
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:185",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3785",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.863014
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:185",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5361",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.928571
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:191",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:4022",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.857143
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:200",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3817",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855072
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:210",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3318",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855072
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:216",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5894",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.863014
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:3978",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1974",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.870968
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:228",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:2355",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.923077
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:231",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7003",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855072
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:236",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5662",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.967742
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:265",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6854",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.930556
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:304",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1758",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855072
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:313",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5778",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855072
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:318",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5484",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.863014
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:319",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7252",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:339",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1830",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855072
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:349",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3123",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.927536
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:369",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:443",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:369",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7111",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:375",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:594",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.907407
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:383",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:2918",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.857143
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:390",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:2916",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.857143
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:422",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:873",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.864865
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:443",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7111",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:455",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1668",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.859155
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:511",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3326",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.852941
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:515",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1674",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.920635
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:522",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3257",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.930556
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:527",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3608",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.909091
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:548",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6156",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:600",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5970",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855072
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:604",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7911",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.850746
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:615",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:4419",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.926471
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:616",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1027",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.935897
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:618",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:4422",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.930556
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:621",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1723",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.913793
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:621",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6092",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.866667
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:630",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5721",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.909091
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:656",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:2445",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.859155
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:677",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6412",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.928571
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:682",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1896",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:686",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5772",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.852941
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:698",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3134",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.884058
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:707",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5319",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.928571
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:716",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5554",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.863014
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:736",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3536",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:746",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:2100",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.918033
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:776",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1407",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:776",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1954",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.927536
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:791",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5665",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.895833
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:817",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3329",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.901961
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:836",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7488",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.925373
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:847",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7213",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.928571
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:859",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7316",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.931507
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:881",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1514",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.921875
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:908",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7521",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.924242
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:930",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7171",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.857143
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:952",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6633",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.928571
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1018",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3803",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.852941
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1048",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1955",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.921875
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1058",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5901",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.859155
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1109",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1331",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.924242
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1133",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7787",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.884058
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1180",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6771",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.923077
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:4390",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:2350",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.925373
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1196",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:4236",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.970149
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1222",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1297",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.969231
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1222",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5079",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.925373
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1246",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:4002",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.927536
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1288",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3646",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.927536
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1297",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5079",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.925373
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1297",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5143",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.855072
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1314",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3391",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.972603
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1321",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3398",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.927536
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1329",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7577",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.864865
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1344",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3738",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.863014
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1348",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:4903",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.852941
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1350",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:2136",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.9
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1360",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6991",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.864865
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1363",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3028",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.921875
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1371",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:2583",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.924242
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1385",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7378",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.930556
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1420",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:1494",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.878788
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1446",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:3372",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.850746
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1467",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6063",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.864865
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1471",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:6838",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.861111
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1494",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7116",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.921875
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1566",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7648",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.921875
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1640",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:7071",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.850746
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1662",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:5397",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.90566
+          },
+          {
+            "cross_split": false,
+            "left_row_id": "rule_collection:prontoqa:1667",
+            "left_split": "pool",
+            "right_row_id": "rule_collection:prontoqa:4988",
+            "right_split": "pool",
+            "token_5gram_jaccard": 0.928571
+          }
+        ]
+      },
+      "overlength_rows_removed": 0,
+      "same_label_duplicate_rows_removed": 116,
+      "sampling": {
+        "available_labels": {
+          "false": 3958,
+          "true": 3926
+        },
+        "total_label_quotas": {
+          "false": 334,
+          "true": 332
+        },
+        "training_label_quotas": {
+          "false": 307,
+          "true": 306
+        },
+        "validation_label_quotas": {
+          "false": 27,
+          "true": 26
+        },
+        "validation_split_groups": 53
+      },
+      "source_rows": 8000
+    },
+    "proofwriter": {
+      "canonical_unique_prompts": 7997,
+      "conflicting_label_groups_removed": 0,
+      "conflicting_label_rows_removed": 0,
+      "eligible_prompt_lengths": {
+        "count": 7997,
+        "max": 672,
+        "median": 534,
+        "min": 452,
+        "p90": 607,
+        "p95": 622,
+        "p99": 646
+      },
+      "eligible_rows": 7997,
+      "exact_duplicate_rows": 0,
+      "ground_truth_scorer_failures": 0,
+      "malformed_or_illegal_ground_truth_rows": 0,
+      "near_duplicate_grouping": {
+        "candidate_pairs": 0,
+        "cross_context_pairs": 0,
+        "pair_examples": []
+      },
+      "overlength_rows_removed": 0,
+      "same_label_duplicate_rows_removed": 0,
+      "sampling": {
+        "available_labels": {
+          "false": 2832,
+          "true": 2816,
+          "unknown": 2349
+        },
+        "total_label_quotas": {
+          "false": 236,
+          "true": 234,
+          "unknown": 196
+        },
+        "training_label_quotas": {
+          "false": 217,
+          "true": 215,
+          "unknown": 181
+        },
+        "validation_label_quotas": {
+          "false": 19,
+          "true": 19,
+          "unknown": 15
+        },
+        "validation_split_groups": 53
+      },
+      "source_rows": 7997
+    }
+  },
+  "evaluation_contamination": {
+    "note": "Do not begin GPU calibration until the protocol's protected-suite comparison is completed.",
+    "status": "pending protected-evaluation corpus availability"
+  },
+  "near_duplicate_cross_split_pairs": 0,
+  "near_duplicate_flagged_pairs": [
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:434",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:808",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.942308
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:434",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:537",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.87037
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:475",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:354",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.878788
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:226",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:592",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.897059
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:226",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:784",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.938462
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:113",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:933",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.921053
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:113",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:80",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.945946
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:387",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:612",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.883333
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:387",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:719",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.898305
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:714",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:531",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.873016
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:289",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:847",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.865385
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:logical_deduction:429",
+      "left_split": "train",
+      "right_row_id": "rule_collection:logical_deduction:285",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.860606
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:554",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:462",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.880597
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:554",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:427",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.855072
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:821",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:321",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.880952
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:783",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:819",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.911111
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:783",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:953",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.893617
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:377",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:787",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.898305
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:336",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:231",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.884211
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:640",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:642",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.910448
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:640",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:582",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.910448
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:10",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:277",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.912281
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:10",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:252",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.87931
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:910",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:54",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.86087
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:910",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:24",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.888889
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:910",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:954",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.86087
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:54",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:24",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.883929
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:54",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:954",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.942857
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:54",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:924",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.883929
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:logical_deduction:211",
+      "left_split": "train",
+      "right_row_id": "rule_collection:logical_deduction:1015",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.854962
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:933",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:80",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.921053
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:461",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:93",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.911765
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:606",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:479",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.92
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:606",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:250",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.884615
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:592",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:784",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.953125
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:prontoqa:5421",
+      "left_split": "train",
+      "right_row_id": "rule_collection:prontoqa:2018",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.859155
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:923",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:867",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.96875
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:923",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:272",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.898551
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:619",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:236",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.864865
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:478",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:355",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.938776
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:146",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:464",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.923077
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:170",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:902",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.907407
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:170",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:18",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.942308
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:12",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:320",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.892857
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:496",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:166",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.864865
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:773",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:616",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.863636
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:712",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:872",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.962264
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:612",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:719",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.883333
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:448",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:886",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.864407
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:782",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:150",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.911765
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:867",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:272",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.898551
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:122",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:746",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.903846
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:67",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:806",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.855556
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:819",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:953",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.866197
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:642",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:582",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.939394
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:426",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:471",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.883117
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:426",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:957",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.871795
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:832",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:109",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.898734
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:832",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:131",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.857143
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:238",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:766",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.891304
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:238",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:35",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.891304
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:526",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:151",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.866667
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:894",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:930",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.87037
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:logical_deduction:1030",
+      "left_split": "train",
+      "right_row_id": "rule_collection:logical_deduction:1173",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.857143
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:424",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:890",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.860759
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:277",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:252",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.894737
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:6",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:25",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.885246
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:logical_deduction:511",
+      "left_split": "train",
+      "right_row_id": "rule_collection:logical_deduction:537",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.855422
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:366",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:255",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.910714
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:366",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:618",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.894737
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:540",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:653",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.882353
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:822",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:87",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.883117
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:325",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:77",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.871429
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:325",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:585",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.898551
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:636",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:859",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.897436
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:511",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:781",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.921875
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:62",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:394",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.892157
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:961",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:796",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.865385
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:134",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:57",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.894231
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:134",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:579",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.861111
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:705",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:396",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.930233
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:705",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:485",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.883721
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:853",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:736",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.883721
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:441",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:474",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.871795
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:462",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:427",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.855072
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:3",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:66",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.9
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:609",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:341",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.95
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:892",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:411",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.864865
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:892",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:595",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.942857
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:77",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:585",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.884058
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:237",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:655",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.884298
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:24",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:954",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.883929
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:108",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:509",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.857143
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:672",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:688",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.866142
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:893",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:132",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.863636
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:209",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:655",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.877049
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:902",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:18",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.890909
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:662",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:99",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.88
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:889",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:806",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.88764
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:808",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:537",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.921569
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:479",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:250",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.884615
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:650",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:816",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.948276
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:109",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:131",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.898734
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:logical_deduction:177",
+      "left_split": "train",
+      "right_row_id": "rule_collection:logical_deduction:706",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.863354
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:411",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:595",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.864865
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:279",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:771",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.933333
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:255",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:618",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.87931
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:627",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:552",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.928571
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:868",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:638",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.867925
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:868",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:408",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.959184
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:746",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:752",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.87037
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:471",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:761",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.85
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:471",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:957",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.883117
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:766",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:35",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.933333
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:321",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:815",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.928571
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:26",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:740",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.921053
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:logical_deduction:373",
+      "left_split": "train",
+      "right_row_id": "rule_collection:logical_deduction:93",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.850299
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:680",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:229",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.892857
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:610",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:847",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.918367
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:525",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:74",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.932432
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:468",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:660",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.897959
+    },
+    {
+      "cross_split": false,
+      "left_row_id": "rule_collection:folio:269",
+      "left_split": "train",
+      "right_row_id": "rule_collection:folio:339",
+      "right_split": "train",
+      "token_5gram_jaccard": 0.90099
+    }
+  ],
+  "near_duplicate_threshold": 0.85,
+  "train_domain_labels": {
+    "AR-LSAT:a": 121,
+    "AR-LSAT:b": 125,
+    "AR-LSAT:c": 120,
+    "AR-LSAT:d": 120,
+    "AR-LSAT:e": 127,
+    "Folio:false": 176,
+    "Folio:true": 235,
+    "Folio:unknown": 202,
+    "Logic NLI:contradiction": 167,
+    "Logic NLI:entailment": 144,
+    "Logic NLI:neutral": 155,
+    "Logic NLI:self_contradiction": 148,
+    "Logical Deduction:a": 125,
+    "Logical Deduction:b": 122,
+    "Logical Deduction:c": 122,
+    "Logical Deduction:d": 84,
+    "Logical Deduction:e": 83,
+    "Logical Deduction:f": 41,
+    "Logical Deduction:g": 37,
+    "ProntoQA:false": 307,
+    "ProntoQA:true": 306,
+    "ProofWriter:false": 217,
+    "ProofWriter:true": 215,
+    "ProofWriter:unknown": 181
+  },
+  "train_domains": {
+    "AR-LSAT": 613,
+    "Folio": 613,
+    "Logic NLI": 614,
+    "Logical Deduction": 614,
+    "ProntoQA": 613,
+    "ProofWriter": 613
+  },
+  "train_prompt_lengths": {
+    "count": 3680,
+    "max": 948,
+    "median": 587,
+    "min": 450,
+    "p90": 708,
+    "p95": 720,
+    "p99": 742
+  },
+  "train_schema_validation": {
+    "canonical_duplicate_prompts": 0,
+    "canonical_unique_prompts": 3680,
+    "duplicate_row_ids": 0,
+    "rows": 3680,
+    "unique_row_ids": 3680,
+    "unique_split_groups": 2642
+  },
+  "validation_domain_labels": {
+    "AR-LSAT:a": 11,
+    "AR-LSAT:b": 11,
+    "AR-LSAT:c": 10,
+    "AR-LSAT:d": 11,
+    "AR-LSAT:e": 11,
+    "Folio:false": 15,
+    "Folio:true": 21,
+    "Folio:unknown": 18,
+    "Logic NLI:contradiction": 14,
+    "Logic NLI:entailment": 12,
+    "Logic NLI:neutral": 14,
+    "Logic NLI:self_contradiction": 13,
+    "Logical Deduction:a": 11,
+    "Logical Deduction:b": 11,
+    "Logical Deduction:c": 10,
+    "Logical Deduction:d": 7,
+    "Logical Deduction:e": 7,
+    "Logical Deduction:f": 4,
+    "Logical Deduction:g": 3,
+    "ProntoQA:false": 27,
+    "ProntoQA:true": 26,
+    "ProofWriter:false": 19,
+    "ProofWriter:true": 19,
+    "ProofWriter:unknown": 15
+  },
+  "validation_domains": {
+    "AR-LSAT": 54,
+    "Folio": 54,
+    "Logic NLI": 53,
+    "Logical Deduction": 53,
+    "ProntoQA": 53,
+    "ProofWriter": 53
+  },
+  "validation_prompt_lengths": {
+    "count": 320,
+    "max": 783,
+    "median": 590,
+    "min": 463,
+    "p90": 707,
+    "p95": 722,
+    "p99": 740
+  },
+  "validation_schema_validation": {
+    "canonical_duplicate_prompts": 0,
+    "canonical_unique_prompts": 320,
+    "duplicate_row_ids": 0,
+    "rows": 320,
+    "unique_row_ids": 320,
+    "unique_split_groups": 320
+  }
+}

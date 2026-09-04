@@ -1,0 +1,47 @@
+{
+  "baseline": "dapo_math",
+  "curation_version": "2026-09-04.v1",
+  "files": {
+    "audit.json": {
+      "sha256": "243d666f818d04fa4edcc252181593b21f3b6bfb9be21c3c04b7ce6c608a58de"
+    },
+    "dapo_math_train.parquet": {
+      "rows": 3680,
+      "sha256": "23d31d4c33052ce70e2fa7b535e3485ffd2993fceacac709ca7df8200301d217"
+    },
+    "dapo_math_val.parquet": {
+      "rows": 320,
+      "sha256": "8779a75b266faf04b6a679fd8ac9c153ae0e51de4e3666f915b36db11e8ee9ba"
+    }
+  },
+  "recreate": "python custom_data_preparation/curate_dapo_math_baseline.py",
+  "reward": {
+    "data_source": "math_dapo",
+    "implementation": "verl.utils.reward_score.math_dapo.compute_score",
+    "range": [
+      -1.0,
+      1.0
+    ]
+  },
+  "sampling": {
+    "seed": 20260904,
+    "strata": "rendered-token-length quartile x integer-answer bucket",
+    "strategy": "deterministic stratified random sampling by SHA-256 rank",
+    "total": 4000,
+    "train": 3680,
+    "validation": 320
+  },
+  "schema_version": 1,
+  "source": {
+    "dataset": "open-r1/DAPO-Math-17k-Processed",
+    "file": "en/train-00000-of-00001.parquet",
+    "file_sha256": "40f672fe8b6dbeee953ae5acc75a38e99144e682450e07c625c87c734ec76285",
+    "license": "not declared on the dataset card",
+    "redistribution_status": "unresolved; internal experimentation only pending data-governance review",
+    "revision": "31dd309567e3da778038cc87d868b6097a3ccf68"
+  },
+  "tokenizer": {
+    "id": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218"
+  }
+}

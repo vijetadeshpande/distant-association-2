@@ -1,0 +1,102 @@
+{
+  "baseline": "rule_collection",
+  "curation_version": "2026-09-04.v1",
+  "files": {
+    "audit.json": {
+      "sha256": "b0143b634869f3b5bc3b75802b85b5f9261c969373dff084a21e28ce0354a21f"
+    },
+    "rule_collection_train.parquet": {
+      "rows": 3680,
+      "sha256": "e941b43650999b37714a4d035155ba1f85c51eac7965f92204ee6ac9245b2a0a"
+    },
+    "rule_collection_val.parquet": {
+      "rows": 320,
+      "sha256": "38eceac758bc447fae9f923f2ecd35391155bd3365923821f3694eb4b531626e"
+    }
+  },
+  "recreate": "python custom_data_preparation/curate_rule_collection_baseline.py",
+  "reward": {
+    "name": "compute_score",
+    "path": "custom_reward_functions/rule_collection_reward.py",
+    "range": [
+      -1.0,
+      1.0
+    ],
+    "sha256": "67ebdf306bc3382c067f24c3967eee4798d2cfb8d6eb554de792139325369cd8"
+  },
+  "sampling": {
+    "domain_quotas": {
+      "ar_lsat": {
+        "data_source": "AR-LSAT",
+        "total": 667,
+        "validation": 54
+      },
+      "folio": {
+        "data_source": "Folio",
+        "total": 667,
+        "validation": 54
+      },
+      "logic_nli": {
+        "data_source": "Logic NLI",
+        "total": 667,
+        "validation": 53
+      },
+      "logical_deduction": {
+        "data_source": "Logical Deduction",
+        "total": 667,
+        "validation": 53
+      },
+      "prontoqa": {
+        "data_source": "ProntoQA",
+        "total": 666,
+        "validation": 53
+      },
+      "proofwriter": {
+        "data_source": "ProofWriter",
+        "total": 666,
+        "validation": 53
+      }
+    },
+    "seed": 20260904,
+    "strategy": "domain-quota and label-stratified SHA-256 sampling with context-group split isolation",
+    "total": 4000,
+    "train": 3680,
+    "validation": 320
+  },
+  "schema_version": 1,
+  "source": {
+    "dataset": "RuleReasoner/RuleCollection-32K",
+    "files": {
+      "ar_lsat": {
+        "path": "id/ar_lsat/train.parquet",
+        "sha256": "040be59f19dc975f94a0bc1cbbb956eee1b0476a71a2128a2ae57706b9498de1"
+      },
+      "folio": {
+        "path": "id/folio/train.parquet",
+        "sha256": "1c6a1f0fb3b2a1ebb970d0486a61014d697be92f0d5dcd285787ff04d83bcaae"
+      },
+      "logic_nli": {
+        "path": "id/logic_nli/train.parquet",
+        "sha256": "ad92a18e44fda1e81e79d27510de1c8e5ad9c4393c72386ad23a3a3e342f104e"
+      },
+      "logical_deduction": {
+        "path": "id/logical_deduction/train.parquet",
+        "sha256": "5e7bdf1d52bbc02a0e403501117f3368195783359049d51b2979926ad071fa2c"
+      },
+      "prontoqa": {
+        "path": "id/prontoqa/train.parquet",
+        "sha256": "eea628ff26ef0d9e121dcdd54d2266eed7dddf4aff88e9acbe9488972f5a9728"
+      },
+      "proofwriter": {
+        "path": "id/proofwriter/train.parquet",
+        "sha256": "5eec964461c49c8c68bfe3b4de4d108761c41bff23d1daeca2e5f4c22eba9a7d"
+      }
+    },
+    "license": "MIT",
+    "revision": "f14a766d2e8e46390101154c6f4f51a67d7a5d9f"
+  },
+  "tokenizer": {
+    "id": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218"
+  }
+}
