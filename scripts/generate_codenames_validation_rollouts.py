@@ -57,6 +57,7 @@ import math
 import os
 import subprocess
 import sys
+import time
 from collections import Counter
 from pathlib import Path
 from typing import Any, Callable, Coroutine
@@ -95,6 +96,41 @@ EXPECTED_DATA_DISTRIBUTION = {
     ("codenames_guess_generation", "expert"): 40,
     ("codenames_clue_generation", "expert"): 40,
 }
+
+
+def log_progress(message: str) -> None:
+    """Emit a timestamped progress line that remains visible beside vLLM logs."""
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+    print(f"[codenames-progress {timestamp}] {message}", flush=True)
+
+
+def format_duration(seconds: float) -> str:
+    """Format a duration compactly without hiding multi-hour runtimes."""
+    seconds = max(0, int(round(seconds)))
+    days, seconds = divmod(seconds, 86_400)
+    hours, seconds = divmod(seconds, 3_600)
+    minutes, seconds = divmod(seconds, 60)
+    if days:
+        return f"{days}d {hours:02d}h {minutes:02d}m"
+    if hours:
+        return f"{hours}h {minutes:02d}m {seconds:02d}s"
+    if minutes:
+        return f"{minutes}m {seconds:02d}s"
+    return f"{seconds}s"
+
+
+def progress_summary(done: int, total: int, elapsed: float, unit: str) -> str:
+    """Return count, percentage, observed rate, and a simple rolling ETA."""
+    percentage = 100.0 if total == 0 else 100.0 * done / total
+    rate = done / elapsed if done > 0 and elapsed > 0 else 0.0
+    remaining = max(0, total - done)
+    eta = remaining / rate if rate > 0 else None
+    rate_text = f"{rate:.2f} {unit}/s" if rate >= 0.1 else f"{rate * 60:.2f} {unit}/min"
+    eta_text = format_duration(eta) if eta is not None else "estimating"
+    return (
+        f"{done:,}/{total:,} {unit} ({percentage:.1f}%) | "
+        f"elapsed {format_duration(elapsed)} | {rate_text} | ETA {eta_text}"
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -353,6 +389,8 @@ async def score_batch(
     rows: list[dict[str, Any]],
     request_outputs: list[Any],
     compute_score: Callable[..., Coroutine[Any, Any, dict[str, Any]]],
+    progress_context: str,
+    progress_interval_s: float = 30.0,
 ) -> list[list[dict[str, Any]]]:
     calls: list[Coroutine[Any, Any, dict[str, Any]]] = []
     for row, request_output in zip(rows, request_outputs, strict=True):
@@ -370,7 +408,58 @@ async def score_batch(
                 )
             )
 
-    flat_results = await asyncio.gather(*calls)
+    async def indexed_result(
+        result_index: int,
+        call: Coroutine[Any, Any, dict[str, Any]],
+    ) -> tuple[int, dict[str, Any]]:
+        return result_index, await call
+
+    total = len(calls)
+    started = time.monotonic()
+    tasks = {
+        asyncio.create_task(indexed_result(result_index, call))
+        for result_index, call in enumerate(calls)
+    }
+    pending = set(tasks)
+    ordered_results: list[dict[str, Any] | None] = [None] * total
+    completed_count = 0
+    next_report_at = started + progress_interval_s
+
+    try:
+        while pending:
+            now = time.monotonic()
+            timeout = max(0.0, next_report_at - now)
+            finished, pending = await asyncio.wait(
+                pending,
+                timeout=timeout,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in finished:
+                result_index, result = task.result()
+                ordered_results[result_index] = result
+                completed_count += 1
+
+            now = time.monotonic()
+            if completed_count == total or now >= next_report_at:
+                log_progress(
+                    f"{progress_context}: "
+                    + progress_summary(
+                        completed_count,
+                        total,
+                        now - started,
+                        "responses",
+                    )
+                )
+                next_report_at = now + progress_interval_s
+    except BaseException:
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        raise
+
+    if any(result is None for result in ordered_results):
+        raise RuntimeError("Reward scoring finished without a result for every response")
+    flat_results = [result for result in ordered_results if result is not None]
     grouped_results: list[list[dict[str, Any]]] = []
     for start in range(0, len(flat_results), RESPONSES_PER_PROMPT):
         grouped_results.append(flat_results[start : start + RESPONSES_PER_PROMPT])
@@ -550,6 +639,7 @@ def build_output_record(
 
 
 def main() -> int:
+    program_started = time.monotonic()
     args = parse_args()
     validate_args(args)
 
@@ -575,6 +665,11 @@ def main() -> int:
     from scripts.checkpoint_utils import checkpoint_short_name, resolve_checkpoint_path
 
     args.model_label = args.model_label or checkpoint_short_name(args.model)
+    log_progress(
+        f"Starting checkpoint {args.model_label} | output={args.output} | "
+        f"seed={args.seed} | logprobs={args.logprobs} | "
+        f"batch_size={args.submission_batch_size}"
+    )
 
     # Load only the parquet dependency before checkpoint resolution. In
     # particular, vLLM is not imported until any rclone copy has completed.
@@ -586,7 +681,7 @@ def main() -> int:
 
     rows = pq.read_table(VAL_PARQUET).to_pylist()
     validate_rows(rows)
-    print(f"Validated all {len(rows)} prompts from {VAL_PARQUET}", flush=True)
+    log_progress(f"Validated all {len(rows)} prompts from {VAL_PARQUET}")
 
     if args.output.exists() and not args.overwrite:
         completed = read_completed_indices(
@@ -596,7 +691,10 @@ def main() -> int:
             seed=args.seed,
             logprobs=args.logprobs,
         )
-        print(f"Resuming {args.output}: {len(completed)}/{EXPECTED_PROMPTS} prompts complete", flush=True)
+        log_progress(
+            f"Resume check: {len(completed)}/{EXPECTED_PROMPTS} prompts already complete "
+            f"in {args.output}"
+        )
     else:
         completed = set()
 
@@ -605,9 +703,11 @@ def main() -> int:
         raise ValueError(f"Output contains invalid prompt indices: {sorted(invalid_completed)}")
     pending_indices = [index for index in range(EXPECTED_PROMPTS) if index not in completed]
     if not pending_indices:
-        print(f"All {EXPECTED_PROMPTS} prompts are already complete; nothing to do", flush=True)
+        log_progress(f"All {EXPECTED_PROMPTS} prompts are already complete; nothing to do")
         return 0
 
+    resolve_started = time.monotonic()
+    log_progress(f"Resolving model/checkpoint: {args.model}")
     resolved_model = resolve_checkpoint_path(
         args.model,
         download_dir=(
@@ -617,15 +717,14 @@ def main() -> int:
         ),
         force_download=args.force_checkpoint_download,
     )
-    if resolved_model == args.model:
-        print(f"Using model reference: {args.model}", flush=True)
-    else:
-        print(f"Resolved model reference to: {resolved_model}", flush=True)
+    log_progress(
+        f"Model ready in {format_duration(time.monotonic() - resolve_started)}: "
+        f"{resolved_model}"
+    )
 
     args.tensor_parallel_size = resolve_tensor_parallel_size(args.tensor_parallel_size)
-    print(
-        f"Using all selected GPUs with tensor_parallel_size={args.tensor_parallel_size}",
-        flush=True,
+    log_progress(
+        f"Using selected GPUs with tensor_parallel_size={args.tensor_parallel_size}"
     )
 
     # GPU/model imports happen only after the checkpoint is available locally.
@@ -636,12 +735,14 @@ def main() -> int:
     tokenizer_kwargs: dict[str, Any] = {"trust_remote_code": True}
     if args.revision is not None:
         tokenizer_kwargs["revision"] = args.revision
+    tokenizer_started = time.monotonic()
+    log_progress("Loading tokenizer and rendering all prompts")
     tokenizer = AutoTokenizer.from_pretrained(resolved_model, **tokenizer_kwargs)
     prompt_token_ids = render_prompt_token_ids(tokenizer, rows)
-    print(
+    log_progress(
         f"Rendered prompts: max={max(map(len, prompt_token_ids))} tokens "
-        f"(training limit={MAX_PROMPT_TOKENS})",
-        flush=True,
+        f"(training limit={MAX_PROMPT_TOKENS}) in "
+        f"{format_duration(time.monotonic() - tokenizer_started)}"
     )
 
     llm_kwargs: dict[str, Any] = {
@@ -661,7 +762,13 @@ def main() -> int:
     if args.revision is not None:
         llm_kwargs["revision"] = args.revision
         llm_kwargs["tokenizer_revision"] = args.revision
+    model_load_started = time.monotonic()
+    log_progress("Loading model into vLLM; vLLM will print its own loading progress")
     llm = LLM(**llm_kwargs)
+    log_progress(
+        f"vLLM model load finished in "
+        f"{format_duration(time.monotonic() - model_load_started)}"
+    )
     sampling = SamplingParams(
         n=RESPONSES_PER_PROMPT,
         temperature=TEMPERATURE,
@@ -676,20 +783,32 @@ def main() -> int:
     output_mode = "w" if args.overwrite or not args.output.exists() else "a"
     event_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(event_loop)
+    processing_started = time.monotonic()
+    pending_total = len(pending_indices)
+    total_batches = math.ceil(pending_total / args.submission_batch_size)
+    log_progress(
+        f"Beginning rollout work: {pending_total} pending prompts x "
+        f"{RESPONSES_PER_PROMPT} responses in {total_batches} batches; "
+        f"{len(completed)}/{EXPECTED_PROMPTS} prompts were already complete"
+    )
     try:
         with args.output.open(output_mode, encoding="utf-8") as output_handle:
             for batch_start in range(0, len(pending_indices), args.submission_batch_size):
+                batch_number = batch_start // args.submission_batch_size + 1
+                batch_started = time.monotonic()
                 indices = pending_indices[batch_start : batch_start + args.submission_batch_size]
                 batch_rows = [rows[index] for index in indices]
                 prompts = [
                     TokensPrompt(prompt_token_ids=prompt_token_ids[index]) for index in indices
                 ]
-                print(
-                    f"Generating prompts {indices[0]}..{indices[-1]} "
-                    f"({len(indices)} prompts x {RESPONSES_PER_PROMPT} responses)",
-                    flush=True,
+                log_progress(
+                    f"Batch {batch_number}/{total_batches} generation started | "
+                    f"dataset prompt indices {indices[0]}..{indices[-1]} | "
+                    f"{len(indices)} prompts x {RESPONSES_PER_PROMPT} responses"
                 )
+                generation_started = time.monotonic()
                 request_outputs = llm.generate(prompts, sampling, use_tqdm=True)
+                generation_elapsed = time.monotonic() - generation_started
                 for index, request_output in zip(indices, request_outputs, strict=True):
                     if len(request_output.outputs) != RESPONSES_PER_PROMPT:
                         raise RuntimeError(
@@ -697,11 +816,40 @@ def main() -> int:
                             f"responses; expected {RESPONSES_PER_PROMPT}"
                         )
 
-                print(f"Scoring {len(indices) * RESPONSES_PER_PROMPT} responses", flush=True)
+                generated_tokens = sum(
+                    len(candidate.token_ids)
+                    for request_output in request_outputs
+                    for candidate in request_output.outputs
+                )
+                token_rate = generated_tokens / generation_elapsed if generation_elapsed > 0 else 0.0
+                log_progress(
+                    f"Batch {batch_number}/{total_batches} generation finished in "
+                    f"{format_duration(generation_elapsed)} | "
+                    f"{generated_tokens:,} output tokens | {token_rate:,.1f} tokens/s"
+                )
+                score_count = len(indices) * RESPONSES_PER_PROMPT
+                scoring_started = time.monotonic()
+                log_progress(
+                    f"Batch {batch_number}/{total_batches} reward scoring started | "
+                    f"{score_count:,} responses"
+                )
                 grouped_rewards = event_loop.run_until_complete(
-                    score_batch(batch_rows, request_outputs, compute_score)
+                    score_batch(
+                        batch_rows,
+                        request_outputs,
+                        compute_score,
+                        progress_context=f"Batch {batch_number}/{total_batches} scoring",
+                    )
+                )
+                log_progress(
+                    f"Batch {batch_number}/{total_batches} reward scoring finished in "
+                    f"{format_duration(time.monotonic() - scoring_started)}"
                 )
 
+                log_progress(
+                    f"Batch {batch_number}/{total_batches} summarizing logprobs and saving "
+                    f"{len(indices)} prompt records"
+                )
                 for index, row, request_output, reward_results in zip(
                     indices,
                     batch_rows,
@@ -725,19 +873,24 @@ def main() -> int:
                 complete_now = len(completed) + min(
                     batch_start + len(indices), len(pending_indices)
                 )
-                print(
-                    f"Saved through {complete_now}/{EXPECTED_PROMPTS} prompts "
-                    f"({complete_now * RESPONSES_PER_PROMPT:,} responses)",
-                    flush=True,
+                run_done = min(batch_start + len(indices), pending_total)
+                run_elapsed = time.monotonic() - processing_started
+                log_progress(
+                    f"Batch {batch_number}/{total_batches} saved in "
+                    f"{format_duration(time.monotonic() - batch_started)} | "
+                    f"overall dataset {complete_now}/{EXPECTED_PROMPTS} prompts "
+                    f"({complete_now * RESPONSES_PER_PROMPT:,} responses) | "
+                    f"this run: {progress_summary(run_done, pending_total, run_elapsed, 'prompts')}"
                 )
     finally:
         event_loop.close()
         asyncio.set_event_loop(None)
 
-    print(
+    log_progress(
         f"Complete: {EXPECTED_PROMPTS} prompts x {RESPONSES_PER_PROMPT} responses "
-        f"= {EXPECTED_PROMPTS * RESPONSES_PER_PROMPT:,} scored pairs in {args.output}",
-        flush=True,
+        f"= {EXPECTED_PROMPTS * RESPONSES_PER_PROMPT:,} scored pairs in {args.output} | "
+        f"rollout/scoring time {format_duration(time.monotonic() - processing_started)} | "
+        f"total wall time {format_duration(time.monotonic() - program_started)}"
     )
     return 0
 
