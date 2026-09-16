@@ -19,6 +19,23 @@ export RCLONE_CHECKPOINT_DIR="${RCLONE_CHECKPOINT_DIR:-${REPO_ROOT}/checkpoints/
 # (or every GPU reported by nvidia-smi when CUDA_VISIBLE_DEVICES is unset).
 TENSOR_PARALLEL_SIZE="${TENSOR_PARALLEL_SIZE:-0}"
 
+format_duration() {
+  local total_seconds="$1"
+  local days=$((total_seconds / 86400))
+  local hours=$(((total_seconds % 86400) / 3600))
+  local minutes=$(((total_seconds % 3600) / 60))
+  local seconds=$((total_seconds % 60))
+  if (( days > 0 )); then
+    printf '%dd %02dh %02dm' "${days}" "${hours}" "${minutes}"
+  elif (( hours > 0 )); then
+    printf '%dh %02dm %02ds' "${hours}" "${minutes}" "${seconds}"
+  elif (( minutes > 0 )); then
+    printf '%dm %02ds' "${minutes}" "${seconds}"
+  else
+    printf '%ds' "${seconds}"
+  fi
+}
+
 # Add tuned checkpoints as plain paths, for example:
 #   "/checkpoints/qwen3-8b/step230/actor/merged_hf"
 #   "gdrive:Distant-Association/qwen3-14b/step230/actor/merged_hf"
@@ -61,8 +78,14 @@ cd "${REPO_ROOT}"
 
 echo "Running ${#CHECKPOINTS[@]} checkpoints sequentially"
 echo "Output directory: ${OUTPUT_DIR}"
+echo "Started: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+run_started_epoch="$(date +%s)"
+checkpoint_number=0
 
 for checkpoint in "${CHECKPOINTS[@]}"; do
+  checkpoint_number=$((checkpoint_number + 1))
+  checkpoint_started_epoch="$(date +%s)"
   if [[ -z "${checkpoint}" ]]; then
     echo "ERROR: CHECKPOINTS contains an empty path" >&2
     exit 1
@@ -76,7 +99,7 @@ for checkpoint in "${CHECKPOINTS[@]}"; do
   output="${OUTPUT_DIR}/${label}.jsonl"
   echo
   echo "======================================================================"
-  echo "Checkpoint: ${label}"
+  echo "Checkpoint: ${checkpoint_number}/${#CHECKPOINTS[@]} — ${label}"
   echo "Model:      ${checkpoint}"
   if [[ "${TENSOR_PARALLEL_SIZE}" == "0" ]]; then
     echo "TP size:    auto (all visible GPUs)"
@@ -92,7 +115,17 @@ for checkpoint in "${CHECKPOINTS[@]}"; do
     --tensor-parallel-size "${TENSOR_PARALLEL_SIZE}" \
     --output "${output}" \
     "$@"
+
+  checkpoint_finished_epoch="$(date +%s)"
+  checkpoint_elapsed=$((checkpoint_finished_epoch - checkpoint_started_epoch))
+  run_elapsed=$((checkpoint_finished_epoch - run_started_epoch))
+  checkpoints_remaining=$((${#CHECKPOINTS[@]} - checkpoint_number))
+  average_checkpoint_seconds=$((run_elapsed / checkpoint_number))
+  estimated_remaining=$((average_checkpoint_seconds * checkpoints_remaining))
+  echo "Checkpoint ${checkpoint_number}/${#CHECKPOINTS[@]} complete in $(format_duration "${checkpoint_elapsed}")"
+  echo "Launcher elapsed: $(format_duration "${run_elapsed}") | estimated remaining: $(format_duration "${estimated_remaining}")"
 done
 
 echo
-echo "Completed all ${#CHECKPOINTS[@]} checkpoints"
+run_finished_epoch="$(date +%s)"
+echo "Completed all ${#CHECKPOINTS[@]} checkpoints in $(format_duration "$((run_finished_epoch - run_started_epoch))")"
