@@ -25,7 +25,10 @@ VERL checkpoints must be merged to HF format before vLLM can load them.
 
 The output is prompt-grouped JSONL: every line contains the prompt metadata,
 32 completions, their token counts and finish reasons, and 32 complete reward
-result dictionaries. Existing output is resumed by prompt index by default.
+result dictionaries. Passing ``--logprobs 20`` additionally stores compact
+per-completion sampled-token likelihood and top-k entropy-lower-bound summaries
+without writing the much larger token-level logprob dictionaries. Existing
+output is resumed by prompt index by default.
 
 Examples::
 
@@ -50,6 +53,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import math
 import os
 import subprocess
 import sys
@@ -151,6 +155,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
+        "--logprobs",
+        type=int,
+        default=0,
+        help=(
+            "Number of top token logprobs requested from vLLM. Zero disables "
+            "logprob summaries; use 20 for checkpoint-trajectory analysis."
+        ),
+    )
+    parser.add_argument(
         "--overwrite",
         action="store_true",
         help="Start over instead of resuming an existing output file",
@@ -186,6 +199,8 @@ def validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--gpu-memory-utilization must be in (0, 1]")
     if args.submission_batch_size < 1:
         raise ValueError("--submission-batch-size must be at least 1")
+    if args.logprobs < 0:
+        raise ValueError("--logprobs must be non-negative")
 
 
 def available_gpu_count() -> int:
@@ -251,8 +266,8 @@ def validate_rows(rows: list[dict[str, Any]]) -> None:
         )
 
 
-def sampling_metadata(seed: int) -> dict[str, Any]:
-    return {
+def sampling_metadata(seed: int, logprobs: int = 0) -> dict[str, Any]:
+    metadata = {
         "n": RESPONSES_PER_PROMPT,
         "temperature": TEMPERATURE,
         "top_p": TOP_P,
@@ -262,6 +277,11 @@ def sampling_metadata(seed: int) -> dict[str, Any]:
         "max_model_len": MAX_MODEL_LEN,
         "seed": seed,
     }
+    # Preserve byte-for-byte compatibility with existing JSONLs and their
+    # resume validation when logprob collection is disabled.
+    if logprobs > 0:
+        metadata["logprobs"] = logprobs
+    return metadata
 
 
 def read_completed_indices(
@@ -269,10 +289,11 @@ def read_completed_indices(
     model: str,
     revision: str | None,
     seed: int,
+    logprobs: int = 0,
 ) -> set[int]:
     """Validate completed JSONL rows before resuming an expensive run."""
     completed: set[int] = set()
-    expected_sampling = sampling_metadata(seed)
+    expected_sampling = sampling_metadata(seed, logprobs)
     with output.open(encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
             if not line.strip():
@@ -356,6 +377,112 @@ async def score_batch(
     return grouped_results
 
 
+def _numeric_logprob(value: Any) -> float | None:
+    """Read a vLLM Logprob object without depending on its concrete version."""
+    raw = getattr(value, "logprob", value)
+    try:
+        result = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return result if math.isfinite(result) else None
+
+
+def _logprob_slice_summary(
+    token_ids: list[int],
+    position_logprobs: list[Any],
+) -> dict[str, float | int | None]:
+    sampled_logprobs: list[float] = []
+    sampled_ranks: list[float] = []
+    top1_probabilities: list[float] = []
+    top1_top2_margins: list[float] = []
+    known_masses: list[float] = []
+    entropy_lower_bounds: list[float] = []
+
+    for token_id, raw_entries in zip(token_ids, position_logprobs, strict=False):
+        if not isinstance(raw_entries, dict) or not raw_entries:
+            continue
+        entries: list[tuple[Any, float]] = []
+        for entry_token_id, entry in raw_entries.items():
+            logprob = _numeric_logprob(entry)
+            if logprob is not None:
+                entries.append((entry_token_id, logprob))
+        if not entries:
+            continue
+
+        sampled_entry = raw_entries.get(token_id)
+        if sampled_entry is None:
+            sampled_entry = raw_entries.get(str(token_id))
+        sampled_logprob = _numeric_logprob(sampled_entry)
+        if sampled_logprob is not None:
+            sampled_logprobs.append(sampled_logprob)
+            rank = getattr(sampled_entry, "rank", None)
+            if isinstance(rank, (int, float)):
+                sampled_ranks.append(float(rank))
+
+        probabilities = sorted(
+            (min(1.0, math.exp(logprob)) for _, logprob in entries),
+            reverse=True,
+        )
+        known_mass = min(1.0, sum(probabilities))
+        residual_mass = max(0.0, 1.0 - known_mass)
+        known_masses.append(known_mass)
+        top1_probabilities.append(probabilities[0])
+        if len(probabilities) > 1:
+            top1_top2_margins.append(probabilities[0] - probabilities[1])
+
+        # Entropy of the observed top-k entries plus one bucket containing the
+        # entire unobserved tail. Lumping the tail makes this a lower bound on
+        # the full-vocabulary entropy, not an entropy estimate.
+        entropy = -sum(
+            probability * math.log(probability)
+            for probability in probabilities
+            if probability > 0.0
+        )
+        if residual_mass > 0.0:
+            entropy -= residual_mass * math.log(residual_mass)
+        entropy_lower_bounds.append(entropy)
+
+    def average(values: list[float]) -> float | None:
+        return sum(values) / len(values) if values else None
+
+    return {
+        "logprob_token_count": len(sampled_logprobs),
+        "sampled_token_logprob_mean": average(sampled_logprobs),
+        "sampled_token_nll_mean": (
+            -average(sampled_logprobs) if sampled_logprobs else None
+        ),
+        "sampled_token_rank_mean": average(sampled_ranks),
+        "top1_probability_mean": average(top1_probabilities),
+        "top1_top2_margin_mean": average(top1_top2_margins),
+        "topk_probability_mass_mean": average(known_masses),
+        "topk_entropy_lower_bound_mean": average(entropy_lower_bounds),
+    }
+
+
+def summarize_completion_logprobs(candidate: Any) -> dict[str, float | int | None] | None:
+    """Summarize vLLM top-k logprobs without storing token-level dictionaries."""
+    raw_logprobs = getattr(candidate, "logprobs", None)
+    token_ids = list(getattr(candidate, "token_ids", []) or [])
+    if not isinstance(raw_logprobs, list) or not raw_logprobs:
+        return None
+    full = _logprob_slice_summary(token_ids, raw_logprobs)
+    first = _logprob_slice_summary(token_ids[:256], raw_logprobs[:256])
+    last = _logprob_slice_summary(token_ids[-128:], raw_logprobs[-128:])
+    full.update(
+        {
+            "first_256_sampled_token_nll_mean": first["sampled_token_nll_mean"],
+            "first_256_topk_entropy_lower_bound_mean": first[
+                "topk_entropy_lower_bound_mean"
+            ],
+            "last_128_sampled_token_nll_mean": last["sampled_token_nll_mean"],
+            "last_128_topk_entropy_lower_bound_mean": last[
+                "topk_entropy_lower_bound_mean"
+            ],
+        }
+    )
+    return full
+
+
 def build_output_record(
     index: int,
     row: dict[str, Any],
@@ -383,7 +510,7 @@ def build_output_record(
         **(row.get("extra_info") or {}),
     }
     candidates = request_output.outputs
-    return {
+    record = {
         "idx": index,
         "model": args.model,
         "resolved_model": resolved_model,
@@ -397,7 +524,7 @@ def build_output_record(
         "finish_reasons": [str(candidate.finish_reason) for candidate in candidates],
         "rewards": [float(result["score"]) for result in reward_results],
         "reward_results": reward_results,
-        "sampling": sampling_metadata(args.seed),
+        "sampling": sampling_metadata(args.seed, args.logprobs),
         "inference": {
             "engine": "vllm",
             "dtype": "bfloat16",
@@ -415,6 +542,11 @@ def build_output_record(
             "thinking": JUDGE_THINKING,
         },
     }
+    if args.logprobs > 0:
+        record["completion_logprob_summaries"] = [
+            summarize_completion_logprobs(candidate) for candidate in candidates
+        ]
+    return record
 
 
 def main() -> int:
@@ -462,6 +594,7 @@ def main() -> int:
             model=args.model,
             revision=args.revision,
             seed=args.seed,
+            logprobs=args.logprobs,
         )
         print(f"Resuming {args.output}: {len(completed)}/{EXPECTED_PROMPTS} prompts complete", flush=True)
     else:
@@ -536,6 +669,7 @@ def main() -> int:
         top_k=TOP_K,
         max_tokens=MAX_RESPONSE_TOKENS,
         seed=args.seed,
+        logprobs=args.logprobs or None,
     )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
