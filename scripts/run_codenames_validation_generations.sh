@@ -23,9 +23,19 @@ TENSOR_PARALLEL_SIZE="${TENSOR_PARALLEL_SIZE:-0}"
 #   "/checkpoints/qwen3-8b/step230/actor/merged_hf"
 #   "gdrive:Distant-Association/qwen3-14b/step230/actor/merged_hf"
 CHECKPOINTS=(
+  "gdrive-distant-association:distant-association-drive/checkpoints/Distant-Association/codenames-dapo-qwen3-1.7b-20260521-225347/global_step_230/actor/merged_hf"
   "Qwen/Qwen3-1.7B"
+
+  #
+  "gdrive-distant-association:distant-association-drive/checkpoints/Distant-Association/codenames-dapo-qwen3-4b-20260522-174546/global_step_230/actor/merged_hf"
   "Qwen/Qwen3-4B"
+
+  # 8B
+  "gdrive-distant-association:distant-association-drive/checkpoints/Distant-Association/codenames-dapo-qwen3-8b-20260521-220104/global_step_230/actor/merged_hf"
   "Qwen/Qwen3-8B"
+
+  # 14B
+  "gdrive-distant-association:distant-association-drive/checkpoints/Distant-Association/codenames-dapo-qwen3-14b-20260904-023756/global_step_230/actor/merged_hf"
   "Qwen/Qwen3-14B"
 )
 
